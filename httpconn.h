@@ -2,7 +2,23 @@
 #define HTTPCONN_H
 
 #include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <assert.h>
+#include <sys/stat.h>
+#include <string.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <stdarg.h>
+#include <errno.h>
+#include "locker.h"
 
 
 class httpConn{
@@ -41,6 +57,14 @@ public:
 	enum CHECK_STATE{CHECK_STATE_REQUESTLINE = 0,
 					 CHECK_STATE_HEADER,	
 					 CHECK_STATE_CONTENT};
+					 
+	//服务器处理HTTP请求的可能结果
+	enum HTTP_CODE{NO_REQUEST, GET_REQUEST, BAD_REQUEST,
+				   NO_RESOURCE, FORBIDDEN_REQUEST, FILE_REQUEST,
+				   INTERNAL_ERROR, CLOSED_CONNECTION};
+	
+	//行的读取状态
+	enum LINE_STATUS {LINE_OK = 0, LINE_BAD, LINE_OPEN};
 	
 	static int m_epollfd;
 	
@@ -48,7 +72,19 @@ public:
 	static int m_user_count;
 	
 private:
+	//初始化连接
 	void init();
+	//解析HTTP请求
+	HTTP_CODE process_read();
+	//填充HTTP应答
+	bool process_write(HTTP_CODE ret);
+	
+	HTTP_CODE parse_request_line(char* text);
+	HTTP_CODE parse_headers(char* text);
+	HTTP_CODE parse_content(char* text);
+	HTTP_CODE do_request();
+	char* getline(){return m_read_buf + m_start_line;}
+	LINE_STATUS parse_line();
 	
 	//被process_write调用以填充HTTP应答
 	void unmap();
