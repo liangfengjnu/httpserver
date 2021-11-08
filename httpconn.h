@@ -88,6 +88,14 @@ private:
 	
 	//被process_write调用以填充HTTP应答
 	void unmap();
+	bool addResponse(const char* format, ... );
+	bool addContent(const char* content);
+	bool addStatusLine(int status, const char* title);
+	bool addHeaders(int content_length);
+	bool addContentLength(int content_len);
+	bool addLinger();
+	bool addBlankLine();
+	
 	
 private:
 	// 该HTTP连接的socket和对方的socket地址
