@@ -3,7 +3,7 @@
 
 const char* ok_200_title = "OK";
 const char* error_400_title = "BAD_REQUEST";
-const char* error_400_FORM = "Your request has bad syntax or is inherently impossible to satisfy.\n";
+const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
 const char* error_403_title = "Forbidden";
 const char* error_403_form = "You do not have permission to get file from this server.\n";
 const char* error_404_title = "Not Found";
@@ -153,6 +153,131 @@ bool httpConn::write(){
 			}
 		}
 	}
+}
+
+//往缓冲中写入待发送的数据
+bool httpConn::addResponse(const char* format, ... ){
+	if(m_write_idx >= WRITE_BUFFER_SIZE){
+		return false;
+	}
+	va_list arg_list;
+	va_start(arg_list, format);
+	int len = vsnprintf(m_write_buf + m_write_idx, WRITE_BUFFER_SIZE - 1 - m_write_idx,
+						format, arg_list);
+	if(len >= (WRITE_BUFFER_SIZE - 1 - m_write_idx)){
+		return false;
+	}
+	m_write_idx += len;
+	va_end(arg_list);
+	return true;
+}
+
+bool httpConn::addStatusLine(int status, const char* title){
+	return addResponse("%s %d %s\r\n", "HTTP/1.1", status, title);
+}
+
+bool httpConn::addHeaders(int content_len){
+	addContentLength(content_len);
+	addLinger();
+	addBlankLine();
+}
+
+bool httpConn::addContentLength(int content_len){
+	return addResponse("Content_Length: %d\r\n", content_len);
+}
+
+bool httpConn::addLinger(){
+	return addResponse("Connection: %s\r\n", (m_linger == true) ? "keep-alive" : "close");
+}
+
+bool httpConn::addBlankLine(){
+	return addResponse("%s", "\r\n");
+}
+
+bool httpConn::addContent(const char* content){
+	return addResponse("%s", content);
+}
+
+//根据服务器处理HTTP请求的结果，决定返回给客户端的内容
+bool httpConn::process_write(HTTP_CODE ret){
+	switch(ret){
+		case INTERNAL_ERROR:
+		{
+			addStatusLine(500, error_500_title);
+			addHeaders(strlen(error_500_form));
+			if(!addContent(error_500_form)){
+				return false;
+			}
+			break;
+		}
+		case BAD_REQUEST:
+		{
+			addStatusLine(400, error_400_title);
+			addHeaders(strlen(error_400_form));
+			if(!addContent(error_400_form)){
+				return false;
+			}
+			break;
+		}
+		case NO_REQUEST:
+		{
+			addStatusLine(404, error_404_title);
+			addHeaders(strlen(error_404_form));
+			if(!addContent(error_404_form)){
+				return false;
+			}
+			break;
+		}
+		case FORBIDDEN_REQUEST:
+		{
+			addStatusLine(403, error_403_title);
+			addHeaders(strlen(error_403_form));
+			if(!addContent(error_403_form)){
+				return false;
+			}
+			break;
+		}
+		case: FILE_REQUEST:
+		{
+			addStatusLine(200, ok_200_title);
+			if(m_file_stat.st_size != 0){
+				addHeaders(m_file_stat.st_size);
+				m_iv[0].iov_base = m_write_buf;
+				m_iv[0].iov_len = m_write_idx;
+				m_iv[1].iov_base = m_file_address;
+				m_iv[1].iov_len = m_file_stat.st_size;
+				m_iv_count = 2;
+				return true;
+			}
+			else{
+				const char* ok_string = "<html><body></body></html>";
+				addHeaders(strlen(ok_string));
+				if(!addContent(ok_string)){
+					return false;
+				}
+			}
+		}
+		default:
+			return false;
+	}
+	m_iv[0].iov_base = m_write_buf;
+	m_iv[0].iov_len = m_write_idx;
+	m_iv_count = 1;
+	return true;
+}
+
+//由线程池中的工作线程调用，这是处理HTTP请求的入口函数
+void httpConn::process(){
+	HTTP_CODE read_ret = process_read();
+	if(read_ret == NO_REQUEST){
+		modfd(m_epollfd, m_sockfd, EPOLLIN);
+		return;
+	}
+	bool write_ret = process_write(read_ret);
+	if(!write_ret){
+		closeConn();
+	}
+	modfd(m_epollfd, m_sockfd, EPOLLOUT);
 }
 
 //从状态机
