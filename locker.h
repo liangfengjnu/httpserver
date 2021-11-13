@@ -10,7 +10,7 @@ class sem{
 public:
 	//创建并初始化信号量
 	sem(){
-		if(sem_init(&m_sem) != 0){
+		if(sem_init(&m_sem, 0, 0) != 0){
 			throw std::exception();
 		}
 	}
@@ -99,5 +99,5 @@ public:
 private:
 	pthread_mutex_t m_mutex;
 	pthread_cond_t m_cond;
-}
+};
 #endif
