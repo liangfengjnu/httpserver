@@ -1,14 +1,6 @@
-src = $(wildcard *.cpp)
-targets = $(patsubst %.cpp, %, $(src))
-
-CC = g++
-CFLAGS = -lpthread -m64 -Wall -g
-
-all:$(targets)
-
-$(targets):%:%.cpp
-	$(CC) $< -o $@ $(CFLAGS)
-
-.PHONY:clean all
+main:httpserver.o main.cpp
+	g++ -pthread -Wall -g  httpconn.o main.cpp 
+httpserver.o:httpconn.cpp
+	g++ -pthread -Wall -g httpconn.cpp -c
 clean:
-	-rm -rf $(targets) 
+	-rm -rf %.o

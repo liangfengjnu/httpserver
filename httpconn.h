@@ -18,6 +18,7 @@
 #include <sys/mman.h>
 #include <stdarg.h>
 #include <errno.h>
+#include <sys/uio.h>
 #include "locker.h"
 
 
@@ -146,7 +147,7 @@ private:
 	struct iovec m_iv[2];
 	int m_iv_count;
 	
-}
+};
 
 
 #endif

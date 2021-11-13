@@ -12,10 +12,10 @@ const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
 const char* doc_root = "/var/www/html";
 
-void setnonblocking(int fd){
-	int old_option = fcntl(fd, F_GETEL);
+int setnonblocking(int fd){
+	int old_option = fcntl(fd, F_GETFL);
 	int new_option = old_option | O_NONBLOCK;
-	fcntl(fd, F_SETFL, newoption);
+	fcntl(fd, F_SETFL, new_option);
 	return old_option;
 }
 
@@ -26,7 +26,7 @@ void addfd(int epollfd, int fd, bool one_shot){
 	if(one_shot){
 		event.events |= EPOLLONESHOT;
 	}
-	epoll_clt(epollfd, EPOLL_CTL_ADD, fd, &event);
+	epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
 	setnonblocking(fd);
 }
 
@@ -39,7 +39,7 @@ void modfd(int epollfd, int fd, int ev){
 	epoll_event event;
 	event.data.fd = fd;
 	event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
-	epoll_clt(epollfd, EPOLL_CTL_MOD, fd, &event);
+	epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
 int httpConn::m_user_count = 0;
@@ -237,7 +237,7 @@ bool httpConn::process_write(HTTP_CODE ret){
 			}
 			break;
 		}
-		case: FILE_REQUEST:
+		case FILE_REQUEST:
 		{
 			addStatusLine(200, ok_200_title);
 			if(m_file_stat.st_size != 0){
@@ -314,9 +314,9 @@ httpConn::HTTP_CODE httpConn::process_read(){
 	HTTP_CODE ret = NO_REQUEST;
 	char* text = 0;
 	
-	while((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
-		   || ((line_status = parse_line()) == LINE_OK){
-		text = get_line();
+	while(((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
+		   || ((line_status = parse_line()) == LINE_OK)){
+		text = getline();
 		m_start_line = m_check_idx;
 		printf("got 1 http line : %s\n", text);
 		
@@ -379,7 +379,7 @@ httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
 	}
 	*m_version++ = '\0';
 	m_version += strspn(m_version, " \t");
-	if(strcasecmp(m_version, "HTTP/1.1" != 0)){
+	if(strcasecmp(m_version, "HTTP/1.1") != 0){
 		return BAD_REQUEST;
 	}
 	if(strncasecmp(m_url, "HTTP://", 7) == 0){
@@ -440,7 +440,7 @@ httpConn::HTTP_CODE httpConn::parse_headers(char* text){
 
 httpConn::HTTP_CODE httpConn::parse_content(char* text){
 	if(m_read_idx >= (m_content_length + m_check_idx)){
-		text(m_content_length] = '\0';
+		text[m_content_length] = '\0';
 		return GET_REQUEST;
 	}
 	return NO_REQUEST;
@@ -449,7 +449,7 @@ httpConn::HTTP_CODE httpConn::parse_content(char* text){
 //分析目标文件的属性
 httpConn::HTTP_CODE httpConn::do_request(){
 	strcpy(m_real_file, doc_root);
-	int len = strlen(dco_root);
+	int len = strlen(doc_root);
 	strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
 	if(stat(m_real_file, &m_file_stat) < 0){
 		return NO_RESOURCE;
@@ -461,7 +461,7 @@ httpConn::HTTP_CODE httpConn::do_request(){
 		return BAD_REQUEST;
 	}
 	int fd = open(m_real_file, O_RDONLY);
-	m_file_address = (char*)mmap(0, m_file_stat.st_size, PORT_READ, 
+	m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ, 
 								 MAP_PRIVATE, fd, 0);
 	close(fd);
 	return FILE_REQUEST;
