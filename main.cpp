@@ -12,7 +12,7 @@
 
 #include "locker.h"
 #include "threadpool.h"
-#inculde "httpconn.h"
+#include "httpconn.h"
 
 #define MAX_FD 65536
 #define MAX_EVENT_NUMBER 10000
@@ -21,7 +21,7 @@ extern int addfd(int epollfd, int fd, bool one_shot);
 extern int removefd(int epollfd, int fd);
 
 
-void addsig(){
+void addsig(int sig, void(handler)(int), bool restart = true){
 	struct sigaction sa;
 	memset(&sa, '\0', sizeof(sa));
 	sa.sa_handler = handler;
@@ -34,19 +34,19 @@ void addsig(){
 
 void show_error(int connfd, const char* info){
 	printf("%s", info);
-	send(connfd, info, strlen(info), strlen(info), 0);
+	send(connfd, info, strlen(info),  0);
 	close(connfd);
 }
 
 int main(int argc, char* argv[]){
 	
-	if(argc <=2 ){
-		printf("usage : %s ip_address port_number\n", basename(argc[0]));
+	if(argc <= 2){
+		printf("usage : %s ip_address port_number\n", basename(argv[0]));
 		return 1;
 	}
 	
 	const char* ip = argv[1];
-	int port = atoi(atgv[2]);
+	int port = atoi(argv[2]);
 	addsig(SIGPIPE, SIG_IGN);
 	
 	threadpool<httpConn>* pool = NULL;
@@ -61,19 +61,19 @@ int main(int argc, char* argv[]){
 	assert(users);
 	int user_count = 0;
 	
-	int listenfd = socket(PE_INET, SOCK_STREAM, 0);
+	int listenfd = socket(PF_INET, SOCK_STREAM, 0);
 	assert(listenfd >= 0);
 	struct linger tmp = {1, 0};
 	setsockopt(listenfd, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
 
 	int ret = 0;
 	struct sockaddr_in address;
-	bzero(&address, sizeof(address);
+	bzero(&address, sizeof(address));
 	address.sin_family = AF_INET;
 	inet_pton(AF_INET, ip, &address.sin_addr);
 	address.sin_port = htons(port);
 	
-	ret = bind(listenfd, (struct sockaddr*)&address, sizeof(address);
+	ret = bind(listenfd, (struct sockaddr*)&address, sizeof(address));
 	assert(ret >= 0);
 	
 	ret = listen(listenfd, 5);
@@ -109,18 +109,18 @@ int main(int argc, char* argv[]){
 				
 				users[connfd].init(connfd, client_address);
 			}
-			else if(event[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
+			else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
 				users[sockfd].closeConn();
 			}
 			else if(events[i].events & EPOLLIN){
-				if(users[sockfd).read(){
+				if(users[sockfd].read()){
 					pool->append(users + sockfd);
 				}
 				else{
 					users[sockfd].closeConn();
 				}
 			}
-			else if(events[i].events & EPOOLOUT){
+			else if(events[i].events & EPOLLOUT){
 				if(!users[sockfd].write()){
 					users[sockfd].closeConn();
 				}
@@ -128,9 +128,9 @@ int main(int argc, char* argv[]){
 			else {}
 		}
 	}
-	close{epollfd);
+	close(epollfd);
 	close(listenfd);
 	delete []users;
-	delete []pool
+	delete pool;
 	return 0;
 }

@@ -1,6 +1,21 @@
-main:httpserver.o main.cpp
-	g++ -pthread -Wall -g  httpconn.o main.cpp 
-httpserver.o:httpconn.cpp
-	g++ -pthread -Wall -g httpconn.cpp -c
+src = $(wildcard ./*.cpp)  
+obj = $(patsubst ./%.cpp, ./%.o, $(src)) 
+
+myArgs= -lpthread -m64 -Wall -g 
+target=server
+CC=g++
+
+ALL:$(target)
+
+$(target):$(obj)
+	$(CC) $^ -o $@ $(myArgs) 
+
+$(obj):%.o:%.cpp
+	$(CC) -c $^ -o $@ $(myArgs)
+
 clean:
-	-rm -rf %.o
+	-rm -rf $(obj) $(target)
+
+.PHONY: clean ALL
+
+
