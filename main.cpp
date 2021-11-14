@@ -40,13 +40,13 @@ void show_error(int connfd, const char* info){
 
 int main(int argc, char* argv[]){
 	
-	if(argc <= 2){
-		printf("usage : %s ip_address port_number\n", basename(argv[0]));
+	if(argc < 2){
+		printf("usage : %s port_number\n", basename(argv[0]));
 		return 1;
 	}
 	
-	const char* ip = argv[1];
-	int port = atoi(argv[2]);
+	//const char* ip = argv[1];
+	int port = atoi(argv[1]);
 	addsig(SIGPIPE, SIG_IGN);
 	
 	threadpool<httpConn>* pool = NULL;
@@ -70,9 +70,10 @@ int main(int argc, char* argv[]){
 	struct sockaddr_in address;
 	bzero(&address, sizeof(address));
 	address.sin_family = AF_INET;
-	inet_pton(AF_INET, ip, &address.sin_addr);
+	//inet_pton(AF_INET, ip, &address.sin_addr);
 	address.sin_port = htons(port);
-	
+	address.sin_addr.s_addr = htonl(INADDR_ANY);	
+
 	ret = bind(listenfd, (struct sockaddr*)&address, sizeof(address));
 	assert(ret >= 0);
 	
