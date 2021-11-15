@@ -121,6 +121,8 @@ private:
 	CHECK_STATE m_check_state;
 	//请求方法
 	METHOD m_method;
+
+	char* _method;
 	
 	//客户请求的目标文件的完整路径
 	char m_real_file[FILENAME_LEN];

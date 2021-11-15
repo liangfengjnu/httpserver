@@ -89,7 +89,7 @@ bool httpConn::read(){
 	if(m_read_idx >= READ_BUFFER_SIZE){
 		return false;
 	}
-	
+//	printf("read function\n");	
 	int bytes_read = 0;
 	while(true){
 		bytes_read = recv(m_sockfd, m_read_buf + m_read_idx, 
@@ -269,8 +269,10 @@ bool httpConn::process_write(HTTP_CODE ret){
 //由线程池中的工作线程调用，这是处理HTTP请求的入口函数
 void httpConn::process(){
 	HTTP_CODE read_ret = process_read();
+//	printf("process function\n");
 	if(read_ret == NO_REQUEST){
 		modfd(m_epollfd, m_sockfd, EPOLLIN);
+		printf("NO_REQUEST\n");
 		return;
 	}
 	bool write_ret = process_write(read_ret);
@@ -283,6 +285,8 @@ void httpConn::process(){
 //从状态机
 httpConn::LINE_STATUS httpConn::parse_line(){
 	char temp;
+	printf("%d\n", m_read_idx);	
+	printf("%s\n",m_read_buf);
 	for( ; m_check_idx < m_read_idx; ++m_check_idx){
 		temp = m_read_buf[m_check_idx];
 		if(temp == '\r'){
@@ -358,6 +362,7 @@ httpConn::HTTP_CODE httpConn::process_read(){
 
 //解析HTTP请求行，获得请求方法、目标URL，以及HTTP版本号
 httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
+/*
 	m_url = strpbrk(text, " \t");
 	if(!m_url){
 		return BAD_REQUEST;
@@ -389,7 +394,14 @@ httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
 	if(!m_url || m_url[0] != '/'){
 		return BAD_REQUEST;
 	}
-	
+*/
+	sscanf(text, "%[^ ] %[^ ] %[^ ]", _method, m_url, m_version);
+	printf("method = %s, path = %s, protocal = %s\n", _method, m_url, m_version);
+	if(strcasecmp(_method, "GET")){
+		m_method = GET;
+	}
+
+
 	m_check_state = CHECK_STATE_HEADER;
 	return NO_REQUEST;
 }
@@ -406,7 +418,7 @@ httpConn::HTTP_CODE httpConn::parse_headers(char* text){
 			m_check_state = CHECK_STATE_CONTENT;
 			return NO_REQUEST;
 		}
-		
+		printf("空行标记！\n");	
 		//否则说明我们已经得到了一个完整的HTTP请求
 		return GET_REQUEST;
 	}
