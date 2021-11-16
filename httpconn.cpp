@@ -285,8 +285,6 @@ void httpConn::process(){
 //从状态机
 httpConn::LINE_STATUS httpConn::parse_line(){
 	char temp;
-	printf("%d\n", m_read_idx);	
-	printf("%s\n",m_read_buf);
 	for( ; m_check_idx < m_read_idx; ++m_check_idx){
 		temp = m_read_buf[m_check_idx];
 		if(temp == '\r'){
@@ -301,9 +299,8 @@ httpConn::LINE_STATUS httpConn::parse_line(){
 			return LINE_BAD;
 		}
 		else if(temp == '\n'){
-			if((m_check_idx > 1) && (m_read_buf[m_check_idx - 1] == '\r')){
-				m_read_buf[m_check_idx - 1] = '\0';
-				m_read_buf[m_check_idx + 1] = '\0';
+			if(m_check_idx > 1){
+				m_read_buf[m_check_idx] = '\0';
 				return LINE_OK;
 			}
 			return LINE_BAD;
@@ -362,44 +359,20 @@ httpConn::HTTP_CODE httpConn::process_read(){
 
 //解析HTTP请求行，获得请求方法、目标URL，以及HTTP版本号
 httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
-/*
-	m_url = strpbrk(text, " \t");
-	if(!m_url){
-		return BAD_REQUEST;
-	}
-	*m_url++ = '\0';
-	
-	char* method = text;
+	printf("text is %s\n", text);
+	char *method = strtok(text, " ");
+	m_url = strtok(NULL, " ");
+	m_version = strtok(NULL, " ");
+
+
 	if(strcasecmp(method, "GET") == 0){
 		m_method = GET;
 	}
-	else{
-		return BAD_REQUEST;
-	}
-	
-	m_url += strspn(m_url, " \t");
-	m_version = strpbrk(m_url, " \t");
-	if(!m_version){
-		return BAD_REQUEST;
-	}
-	*m_version++ = '\0';
-	m_version += strspn(m_version, " \t");
+
 	if(strcasecmp(m_version, "HTTP/1.1") != 0){
 		return BAD_REQUEST;
 	}
-	if(strncasecmp(m_url, "HTTP://", 7) == 0){
-		m_url += 7;
-		m_url = strchr(m_url, '/');
-	}
-	if(!m_url || m_url[0] != '/'){
-		return BAD_REQUEST;
-	}
-*/
-	sscanf(text, "%[^ ] %[^ ] %[^ ]", _method, m_url, m_version);
-	printf("method = %s, path = %s, protocal = %s\n", _method, m_url, m_version);
-	if(strcasecmp(_method, "GET")){
-		m_method = GET;
-	}
+	printf("method = %s, path = %s, protocal = %s\n", method, m_url, m_version);
 
 
 	m_check_state = CHECK_STATE_HEADER;
