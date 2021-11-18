@@ -136,11 +136,15 @@ bool httpConn::write(){
 				return true;
 			}
 			unmap();
+			printf("temp == -1\n");
 			return false;
 		}
 		bytes_to_send -= temp;
 		bytes_have_send += temp;
 		if(bytes_to_send <= bytes_have_send){
+			printf("bytes_to_send is %d\n", bytes_to_send);
+			printf("bytes_have_send is %d\n", bytes_have_send);
+			unmap();
 			unmap();
 			if(m_linger){
 				init();
@@ -212,6 +216,7 @@ bool httpConn::process_write(HTTP_CODE ret){
 		}
 		case BAD_REQUEST:
 		{
+			printf("ret is BAD_REQUEST");
 			addStatusLine(400, error_400_title);
 			addHeaders(strlen(error_400_form));
 			if(!addContent(error_400_form)){
@@ -221,6 +226,8 @@ bool httpConn::process_write(HTTP_CODE ret){
 		}
 		case NO_REQUEST:
 		{
+			printf("ret is NO_REQUEST");
+			addStatusLine(400, error_400_title);
 			addStatusLine(404, error_404_title);
 			addHeaders(strlen(error_404_form));
 			if(!addContent(error_404_form)){
@@ -230,6 +237,7 @@ bool httpConn::process_write(HTTP_CODE ret){
 		}
 		case FORBIDDEN_REQUEST:
 		{
+			addStatusLine(400, error_400_title);
 			addStatusLine(403, error_403_title);
 			addHeaders(strlen(error_403_form));
 			if(!addContent(error_403_form)){
@@ -239,6 +247,7 @@ bool httpConn::process_write(HTTP_CODE ret){
 		}
 		case FILE_REQUEST:
 		{
+			printf("ret is FILE_REQUEST");
 			addStatusLine(200, ok_200_title);
 			if(m_file_stat.st_size != 0){
 				addHeaders(m_file_stat.st_size);
@@ -268,8 +277,7 @@ bool httpConn::process_write(HTTP_CODE ret){
 
 //由线程池中的工作线程调用，这是处理HTTP请求的入口函数
 void httpConn::process(){
-	HTTP_CODE read_ret = process_read();
-//	printf("process function\n");
+	HTTP_CODE read_ret = do_read();
 	if(read_ret == NO_REQUEST){
 		modfd(m_epollfd, m_sockfd, EPOLLIN);
 		printf("NO_REQUEST\n");
@@ -277,6 +285,7 @@ void httpConn::process(){
 	}
 	bool write_ret = process_write(read_ret);
 	if(!write_ret){
+		printf("closeConn function\n");
 		closeConn();
 	}
 	modfd(m_epollfd, m_sockfd, EPOLLOUT);
@@ -309,52 +318,32 @@ httpConn::LINE_STATUS httpConn::parse_line(){
 	return LINE_OPEN;
 }
 
-//主状态机
-httpConn::HTTP_CODE httpConn::process_read(){
-	LINE_STATUS line_status = LINE_OK;
-	HTTP_CODE ret = NO_REQUEST;
-	char* text = 0;
-	
-	while(((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
-		   || ((line_status = parse_line()) == LINE_OK)){
-		text = getline();
-		m_start_line = m_check_idx;
-		printf("got 1 http line : %s\n", text);
-		
-		switch(m_check_state){
-			case CHECK_STATE_REQUESTLINE:
-			{
-				ret = parse_request_line(text);
-				if(ret == BAD_REQUEST){
-					return BAD_REQUEST;
-				}
-				break;
-			}
-			case CHECK_STATE_HEADER:
-			{
-				ret = parse_headers(text);
-				if(ret ==  BAD_REQUEST){
-					return BAD_REQUEST;
-				}
-				else if(ret == GET_REQUEST){
-					return do_request();
-				}
-				break;
-			}
-			case CHECK_STATE_CONTENT:
-			{
-				ret = parse_content(text);
-				if(ret == GET_REQUEST){
-					return do_request();
-				}
-				line_status = LINE_OPEN;
-				break;
-			}
-			default:
-				return INTERNAL_ERROR;
-		}
+httpConn::HTTP_CODE httpConn::http_request(){
+	struct stat sbuf;
+
+	int ret = stat(m_url, &m_file_stat);
+	if(ret != 0){
+		printf("文件错误\n");
+		return BAD_REQUEST;
 	}
-	return NO_REQUEST;
+	printf("这里发送文件\n");
+	return FILE_REQUEST;
+}
+
+httpConn::HTTP_CODE httpConn::do_read(){
+	LINE_STATUS line_status = LINE_OK;
+	line_status = parse_line();
+	char* text = getline();
+	printf("got 1 http line : %s\n", text);
+	HTTP_CODE ret = parse_request_line(text);
+	if(ret == BAD_REQUEST){
+		modfd(m_epollfd, m_sockfd, EPOLLIN);
+		printf("bad request\n");
+		return BAD_REQUEST;
+	}
+
+	ret = http_request();
+	return ret;
 }
 
 //解析HTTP请求行，获得请求方法、目标URL，以及HTTP版本号
@@ -433,7 +422,7 @@ httpConn::HTTP_CODE httpConn::parse_content(char* text){
 
 //分析目标文件的属性
 httpConn::HTTP_CODE httpConn::do_request(){
-	strcpy(m_real_file, doc_root);
+/*	strcpy(m_real_file, doc_root);
 	int len = strlen(doc_root);
 	strncpy(m_real_file + len, m_url, FILENAME_LEN - len - 1);
 	if(stat(m_real_file, &m_file_stat) < 0){
@@ -449,5 +438,13 @@ httpConn::HTTP_CODE httpConn::do_request(){
 	m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ, 
 								 MAP_PRIVATE, fd, 0);
 	close(fd);
+	return FILE_REQUEST;
+*/
+//	struct stat sbuf;
+//	int ret = stat(m_url, &sbuf);
+//	if(ret != 0){
+//		printf("文件不存在");
+//		exit(1);
+//	}
 	return FILE_REQUEST;
 }

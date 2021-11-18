@@ -80,6 +80,9 @@ private:
 	//填充HTTP应答
 	bool process_write(HTTP_CODE ret);
 	
+	HTTP_CODE do_read();
+	HTTP_CODE http_request();
+
 	HTTP_CODE parse_request_line(char* text);
 	HTTP_CODE parse_headers(char* text);
 	HTTP_CODE parse_content(char* text);

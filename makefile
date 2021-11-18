@@ -1,7 +1,7 @@
 src = $(wildcard ./*.cpp)  
 obj = $(patsubst ./%.cpp, ./%.o, $(src)) 
 
-myArgs= -lpthread -m64 -Wall -g 
+myArgs= -lpthread -m64 -Wall -g  
 target=server
 CC=g++
 
