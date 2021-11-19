@@ -122,6 +122,7 @@ bool httpConn::write(){
 	int temp = 0;
 	int bytes_have_send = 0;
 	int bytes_to_send = m_write_idx;
+	printf("m_write_idx is %d\n", m_write_idx);
 	if(bytes_to_send == 0){
 		modfd(m_epollfd, m_sockfd, EPOLLIN);
 		init();
@@ -141,10 +142,12 @@ bool httpConn::write(){
 		}
 		bytes_to_send -= temp;
 		bytes_have_send += temp;
+		printf("bytes_to_send is %d, bytes_have_send is %d, temp is %d\n",
+			       	bytes_to_send, bytes_have_send, temp);
+		
 		if(bytes_to_send <= bytes_have_send){
 			printf("bytes_to_send is %d\n", bytes_to_send);
 			printf("bytes_have_send is %d\n", bytes_have_send);
-			unmap();
 			unmap();
 			if(m_linger){
 				init();
@@ -247,7 +250,8 @@ bool httpConn::process_write(HTTP_CODE ret){
 		}
 		case FILE_REQUEST:
 		{
-			printf("ret is FILE_REQUEST");
+			printf("ret is FILE_REQUEST\n");
+			m_linger = true;
 			addStatusLine(200, ok_200_title);
 			if(m_file_stat.st_size != 0){
 				addHeaders(m_file_stat.st_size);
@@ -327,6 +331,11 @@ httpConn::HTTP_CODE httpConn::http_request(){
 		return BAD_REQUEST;
 	}
 	printf("这里发送文件\n");
+
+	int fd = open(m_url, O_RDONLY);
+	m_file_address = (char*)mmap(0, m_file_stat.st_size, PROT_READ,
+				     MAP_PRIVATE, fd, 0);
+	close(fd);
 	return FILE_REQUEST;
 }
 
