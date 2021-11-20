@@ -122,7 +122,6 @@ bool httpConn::write(){
 	int temp = 0;
 	int bytes_have_send = 0;
 	int bytes_to_send = m_write_idx;
-	printf("m_write_idx is %d\n", m_write_idx);
 	if(bytes_to_send == 0){
 		modfd(m_epollfd, m_sockfd, EPOLLIN);
 		init();
@@ -287,11 +286,11 @@ void httpConn::process(){
 		printf("NO_REQUEST\n");
 		return;
 	}
-	bool write_ret = process_write(read_ret);
-	if(!write_ret){
-		printf("closeConn function\n");
-		closeConn();
-	}
+//	bool write_ret = process_write(read_ret);
+//	if(!write_ret){
+//		printf("closeConn function\n");
+//		closeConn();
+//	}
 	modfd(m_epollfd, m_sockfd, EPOLLOUT);
 }
 
@@ -345,19 +344,44 @@ httpConn::HTTP_CODE httpConn::do_read(){
 	char* text = getline();
 	printf("got 1 http line : %s\n", text);
 	HTTP_CODE ret = parse_request_line(text);
-	if(ret == BAD_REQUEST){
-		modfd(m_epollfd, m_sockfd, EPOLLIN);
-		printf("bad request\n");
-		return BAD_REQUEST;
-	}
+//	if(ret == BAD_REQUEST){
+//		modfd(m_epollfd, m_sockfd, EPOLLIN);
+//		printf("bad request\n");
+//		return BAD_REQUEST;
+//	}
 
-	ret = http_request();
+//	ret = http_request();
 	return ret;
 }
 
 //解析HTTP请求行，获得请求方法、目标URL，以及HTTP版本号
 httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
+
 	printf("text is %s\n", text);
+	m_url = strpbrk(text," \t");
+	if(!m_url){
+		printf("return bad_request!\n");
+		return BAD_REQUEST;
+	}
+	*m_url++ = '\0';
+	printf("m_url is %s\n", m_url);
+
+	char* method = text;
+	printf("method is %s\n", method);
+	if(strcasecmp(method, "GET") == 0){
+		m_method = GET;
+	}else{
+		return BAD_REQUEST;
+	}
+
+	m_url += strspn(m_url, " \t");
+	m_version = strpbrk(m_url, " \t");
+	*m_version++ = '\0';
+	m_version += strspn(m_version, " \t");
+	printf("m_url is %s, m_version is %s\n", m_url, m_version);
+
+	return NO_REQUEST;
+/*
 	char *method = strtok(text, " ");
 	m_url = strtok(NULL, " ");
 	m_version = strtok(NULL, " ");
@@ -375,6 +399,7 @@ httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
 
 	m_check_state = CHECK_STATE_HEADER;
 	return NO_REQUEST;
+*/
 }
 
 //解析HTTP请求的一个头部信息
