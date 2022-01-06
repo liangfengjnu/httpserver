@@ -294,6 +294,17 @@ void httpConn::process(){
 	modfd(m_epollfd, m_sockfd, EPOLLOUT);
 }
 
+// void httpConn::sendFile(){
+	// int n = 0;
+	
+	// int ret = stat(m_url, &m_file_stat);
+	// if(ret != 0){
+		// printf("文件错误\n");
+		// return ;
+	// }
+	// int fd = open(m_url, O_RDONLY);
+// }
+
 //从状态机
 httpConn::LINE_STATUS httpConn::parse_line(){
 	char temp;
