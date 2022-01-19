@@ -2,11 +2,16 @@
 #define CHANNEL_H
 
 #include <functional>
+#include <sys/epoll.h>
+#include <memory>
+
 
 class Eventloop;
 
 class Channel
 {
+private:
+	typedef std::function<void()> callBack;
 public:
 	Channel(Eventloop* loop);
 	~Channel();
@@ -30,7 +35,7 @@ public:
 	void setRevents(__uint32_t ev){revents_ = ev;}
 
 private:
-	typedef std::function<void()> callBack;
+
 	Eventloop* loop_;
 	int fd_;
 	__uint32_t events_;

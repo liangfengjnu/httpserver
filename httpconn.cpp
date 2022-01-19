@@ -1,5 +1,6 @@
 #include "httpconn.h"
-
+#include "channel.h"
+#include "eventloop.h"
 
 const char* ok_200_title = "OK";
 const char* error_400_title = "BAD_REQUEST";
@@ -44,10 +45,8 @@ void modfd(int epollfd, int fd, int ev){
 	epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
-int httpConn::m_user_count = 0;
-int httpConn::m_epollfd = -1;
 
-HttpConn::HttpConn(ventloop* loop, int connFd):
+HttpConn::HttpConn(Eventloop* loop, int connFd):
 loop_(loop),
 connFd_(connFd),
 channel_(new Channel(loop_))
@@ -56,8 +55,8 @@ channel_(new Channel(loop_))
 	channel_->setFd(connFd);
 	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	
-	channel_->setReadHandler(std::bind(&HttpConn::handleRead(), this));
-	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite(), this));
+	channel_->setReadHandler(std::bind(&HttpConn::handleRead, this));
+	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite, this));
 	
 	loop_->addToPoller(channel_);
 }
@@ -73,13 +72,13 @@ void HttpConn::handleRead()
 			if(errno == EAGAIN || errno == EWOULDBLOCK){
 				break;
 			}
-			return false;
+			return;
 		}
 		else if(bytes_read == 0)
 		{
-			return false;
+			return;
 		}
-		m_read_idx += bytes_read;
+		readIdx_ += bytes_read;
 	}
 	handleMessages();
 }

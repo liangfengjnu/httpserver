@@ -14,12 +14,14 @@
 #include <sys/epoll.h>
 #include <memory>
 
-#include "channel.h"
-#include "eventloop"
 #include "httpconn.h"
+#include "channel.h"
 
 #define MAX_FD 65536
 #define MAX_EVENT_NUMBER 10000
+
+class Eventloop;
+
 
 class Server
 {
@@ -36,7 +38,7 @@ private:
 	bool initServer();
 	
 private:
-	Eventloop loop_;
+	Eventloop* loop_;
 	int listenFd_;
 	int port_;
 	std::shared_ptr<Channel> acceptChannel_;

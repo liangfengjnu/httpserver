@@ -42,7 +42,7 @@ int main(int argc, char* argv[]){
 	//const char* ip = argv[1];
 	int port = atoi(argv[1]);
 	addsig(SIGPIPE, SIG_IGN);
-	Server server(mainloop, port);
+	Server server(&mainloop, port);
 	server.start();
 	
 	mainloop.loop();

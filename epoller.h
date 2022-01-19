@@ -9,23 +9,23 @@
 #include <errno.h>
 #include <sys/epoll.h>
 
-#include "channel.h"
 #include "eventloop.h"
 
+class Channel;
 class Epoller
 {
 public:
 	Epoller(int maxEvent);
 	~Epoller();
 
-	void wait(std::vector<Channel*> channelList);
-	void fillChannelList(int events, std::vector<Channel*> channelList);
+	void wait(std::vector<Channel*>* channelList);
+	void fillChannelList(int events, std::vector<Channel*>* channelList);
 	
-	void epollAdd();
+	void epollAdd(std::shared_ptr<Channel> channel);
 private:
 	int epollFd_;
 	std::vector<epoll_event> events_;
-	std::map<int, Channel*> channels;
+	std::map<int, Channel*> channels_;
 };
 
 #endif

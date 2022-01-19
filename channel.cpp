@@ -1,4 +1,5 @@
 #include "channel.h"
+#include "eventloop.h"
 
 Channel::Channel(Eventloop* loop) 
 :loop_(loop),

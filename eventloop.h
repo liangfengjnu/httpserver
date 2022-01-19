@@ -2,9 +2,10 @@
 #define EVENTLOOP_H
 
 #include <vector>
+#include <memory>
 
-#include "channel.h"
-#include "epoller.h"
+class Epoller;
+class Channel;
 
 class Eventloop
 {

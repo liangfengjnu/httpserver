@@ -19,15 +19,19 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/uio.h>
+#include <functional>
+#include <memory>
 
-#include "channel.h"
-#include "eventloop.h"
 #include "locker.h"
 
+class Channel;
+class Eventloop;
 
 class HttpConn{
+private:
+	typedef std::function<void()> callBack;
 public:
-	HttpConn(Evenloop* loop, int connFd){}
+	HttpConn(Eventloop* loop, int connFd);
 	~HttpConn(){}
 
 	
@@ -38,6 +42,8 @@ public:
 	void handleMessages();
 	
 public:
+	static const int READ_BUFFER_SIZE = 2048;
+	static const int WRITE_BUFFER_SIZE = 1024;
 	/*
 	//文件名的最大长度
 	static const int FILENAME_LEN = 200;
@@ -99,7 +105,7 @@ private:
 	
 	*/
 private:
-	typedf std::function<void()> callBack;
+
 	// 该HTTP连接的socket和对方的socket地址
 	int m_sockfd;
 	sockaddr_in m_address;
@@ -151,7 +157,7 @@ private:
 	int m_iv_count;
 	*/
 	int connFd_;
-	Evenloop* loop_;
+	Eventloop* loop_;
 	std::shared_ptr<Channel> channel_; 
 	callBack handleMessages_;
 	

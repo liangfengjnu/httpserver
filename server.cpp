@@ -1,4 +1,6 @@
 #include "server.h"
+#include "eventloop.h"
+
 
 using namespace std;
 
@@ -57,7 +59,7 @@ bool Server::initServer()
 	bzero(&address, sizeof(address));
 	address.sin_family = AF_INET;
 	//inet_pton(AF_INET, ip, &address.sin_addr);
-	address.sin_port = htons(port);
+	address.sin_port = htons(port_);
 	address.sin_addr.s_addr = htonl(INADDR_ANY);	
 
 	ret = bind(listenFd_, (struct sockaddr*)&address, sizeof(address));
@@ -113,8 +115,8 @@ void Server::handleNewConn()
 		printf("error is: %d\n", errno);
 	}
 	
-	httpConn* conn = new HttpConn(loop_, connFd);
-	conn->setHandleMessages(std::bind(&Server::onMessages(), this));
+	HttpConn* conn = new HttpConn(loop_, connFd);
+	conn->setHandleMessages(std::bind(&Server::onMessages, this));
 	//conn_->set
 }
 
