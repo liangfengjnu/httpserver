@@ -30,7 +30,7 @@ public:
 	void setRevents(__uint32_t ev){revents_ = ev;}
 
 private:
-	typedf std::function<void()> callBack;
+	typedef std::function<void()> callBack;
 	Eventloop* loop_;
 	int fd_;
 	__uint32_t events_;

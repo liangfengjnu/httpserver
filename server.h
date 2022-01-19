@@ -12,8 +12,11 @@
 #include <stdlib.h>
 #include <cassert>
 #include <sys/epoll.h>
+#include <memory>
 
 #include "channel.h"
+#include "eventloop"
+#include "httpconn.h"
 
 #define MAX_FD 65536
 #define MAX_EVENT_NUMBER 10000
@@ -35,11 +38,11 @@ private:
 private:
 	Eventloop loop_;
 	int listenFd_;
+	int port_;
 	std::shared_ptr<Channel> acceptChannel_;
 	/*
 	static const int MAX_FD = 65536;
 	static const int MAX_EVENT_NUMBER = 10000;
-	int port_;
 	int listenFd_;
 	bool isClose_;
 	int userCount_;

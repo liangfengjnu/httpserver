@@ -22,7 +22,7 @@ Server::Server(Eventloop* loop, int port)
 */
 	if(initServer())
 	{
-		isClose_ = true;
+		//isClose_ = true;
 	}
 }
 
@@ -107,11 +107,10 @@ void Server::handleNewConn()
 {
 	struct sockaddr_in client_address;
 	socklen_t client_addrlength = sizeof(client_address);
-	int connFd = accept(listenfd, (struct sockaddr*)&client_address, &client_addrlength);
+	int connFd = accept(listenFd_, (struct sockaddr*)&client_address, &client_addrlength);
 	if(connFd < 0)
 	{
 		printf("error is: %d\n", errno);
-		continue;
 	}
 	
 	httpConn* conn = new HttpConn(loop_, connFd);
