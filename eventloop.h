@@ -1,6 +1,8 @@
 #ifndef EVENTLOOP_H
 #define EVENTLOOP_H
 
+#include <vector>
+
 #include "channel.h"
 #include "epoller.h"
 
@@ -15,6 +17,9 @@ public:
 private:
 	Channel* channel_;
 	Epoller* epoller_;
+	
+	std::vector<Channel*> channelList_;
+	Channel* activeChannel_;
 };
 
 #endif

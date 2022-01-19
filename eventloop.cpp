@@ -1,6 +1,7 @@
 #include "eventloop.h"
 
-Eventloop::eventloop() : channel_(this)
+Eventloop::eventloop()
+:epoller_(new Epoller())
 {
 	
 }
@@ -14,10 +15,12 @@ void Eventloop::loop()
 {
 	while(true)
 	{
-		int eventCount = epoller_->wait();
-		for(int i = 0; i < eventCount; ++i)
+		//int eventCount = 
+		epoller_->wait(channelList_);
+		for(Channel* channel : channelList_)
 		{
-			
+			activeChannel_ = channel;
+			activeChannel_->handleEvent();
 		}
 	}
 }

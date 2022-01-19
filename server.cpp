@@ -2,9 +2,13 @@
 
 using namespace std;
 
-Server::Server(int port)
-:port_(port), pool_(NULL), user_count_(0)
+Server::Server(Eventloop* loop, int port)
+:loop_(loop),
+ port_(port), 
+ acceptChannel_(new Channel(loop_))
 {
+	
+	/*
 	try{
 		pool_ = new threadpool<httpConn>;
 	}
@@ -15,11 +19,14 @@ Server::Server(int port)
 	epoller_ = new epoller();
 	users_ = new httpConn[MAX_FD];
 	assert(users);
-
+*/
 	if(initServer())
 	{
 		isClose_ = true;
 	}
+	acceptChannel_->setFd(listenFd_);
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
+	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
 }
 
 bool Server::initServer()
@@ -28,8 +35,8 @@ bool Server::initServer()
 	if(listenFd_ < 0) {
         printf("Create socket error!", port_);
         return false;
-    }
-
+    }	
+	
 	int ret = 0;
 	struct linger tmp = {1, 0};
 	setsockopt(listenFd_, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
@@ -40,8 +47,7 @@ bool Server::initServer()
     }
 
 	int optval = 1;
-    /* 端口复用 */
-    /* 只有最后一个套接字会正常接收数据。 */
+
     ret = setsockopt(listenFd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&optval, sizeof(int));
     if(ret == -1) 
 	{
@@ -65,7 +71,7 @@ bool Server::initServer()
         return false;
     }
 
-	
+	/*
 	ret = listen(listenFd_, 5);
 	if(ret < 0) 
 	{
@@ -86,20 +92,38 @@ bool Server::initServer()
         close(listenFd_);
         return false;
     }
-	
+	*/
 	//httpConn::m_epollfd = epollfd;
 }
 
 Server::~Server()
 {
+	/*
 	close(epollfd);
 	close(listenfd);
 	delete []users;
 	delete pool_;
+*/
+}
+
+void Server::handleNewConn()
+{
+	struct sockaddr_in client_address;
+	socklen_t client_addrlength = sizeof(client_address);
+	int connFd = accept(listenfd, (struct sockaddr*)&client_address, &client_addrlength);
+	if(connFd < 0)
+	{
+		printf("error is: %d\n", errno);
+		continue;
+	}
+	
+	httpConn* conn = new HttpConn(loop_, connFd);
+	//conn_->set
 }
 
 void Server::start()
 {
+/*
 	while(！isClose_)
 	{
 		int number = epoller_->wait(epollfd, events, MAX_EVENT_NUMBER, -1);
@@ -144,4 +168,5 @@ void Server::start()
 			else {}
 		}
 	}
+*/
 }
