@@ -24,3 +24,8 @@ void Eventloop::loop()
 		}
 	}
 }
+
+void Eventloop::addToPoller(std::shared_ptr<Channel> channel)
+{
+	epoller_->epollAdd(channel);
+}

@@ -20,6 +20,8 @@ public:
 
 	void wait(std::vector<Channel*> channelList);
 	void fillChannelList(int events, std::vector<Channel*> channelList);
+	
+	void epollAdd();
 private:
 	int epollFd_;
 	std::vector<epoll_event> events_;

@@ -12,6 +12,7 @@
 
 #include "locker.h"
 #include "server.h"
+#include "eventloop.h"
 
 
 void addsig(int sig, void(handler)(int), bool restart = true){
@@ -37,13 +38,13 @@ int main(int argc, char* argv[]){
 		printf("usage : %s port_number\n", basename(argv[0]));
 		return 1;
 	}
-	
+	Eventloop mainloop;
 	//const char* ip = argv[1];
 	int port = atoi(argv[1]);
 	addsig(SIGPIPE, SIG_IGN);
-	Server server(port);
+	Server server(mainloop, port);
 	server.start();
 	
-	
+	mainloop.loop();
 	return 0;
 }

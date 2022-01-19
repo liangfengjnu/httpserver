@@ -19,30 +19,26 @@
 #include <stdarg.h>
 #include <errno.h>
 #include <sys/uio.h>
+
+#include "channel.h"
+#include "eventloop.h"
 #include "locker.h"
 
 
-class httpConn{
+class HttpConn{
 public:
-	httpConn(){}
-	~httpConn(){}
+	HttpConn(Evenloop* loop, int connFd){}
+	~HttpConn(){}
+
 	
-	//初始化新接受的连接
-	void init(int sockfd, const sockaddr_in& addr);
+	void setHandleMessages(callBack&& handleMessages){handleMessages_ = handleMessages;}
 	
-	//关闭连接
-	void closeConn(bool realClose = true);
-	
-	//处理客户请求
-	void process();
-	
-	//非阻塞读操作
-	bool read();
-	
-	//非阻塞写操作
-	bool write();
+	void handleRead();
+	void handleWrite();
+	void handleMessages();
 	
 public:
+	/*
 	//文件名的最大长度
 	static const int FILENAME_LEN = 200;
 	//读缓冲区的大小
@@ -71,8 +67,9 @@ public:
 	
 	//统计用户数量
 	static int m_user_count;
-	
+	*/
 private:
+	/*
 	//初始化连接
 	void init();
 	//解析HTTP请求
@@ -100,14 +97,15 @@ private:
 	bool addLinger();
 	bool addBlankLine();
 	
-	
+	*/
 private:
+	typedf std::function<void()> callBack;
 	// 该HTTP连接的socket和对方的socket地址
 	int m_sockfd;
 	sockaddr_in m_address;
 	
 	//读缓冲区
-	char m_read_buf[READ_BUFFER_SIZE];
+	char readBuff_[READ_BUFFER_SIZE];
 	//写缓冲区
 	char m_write_buf[WRITE_BUFFER_SIZE];
 	//当前正在解析的行的起始位置
@@ -115,11 +113,11 @@ private:
 	//当前正在分析的字符在读缓冲区中的位置
 	int m_check_idx;
 	//标识读缓冲中已经读入的客户数据的最后一个字节的下一个位置
-	int m_read_idx;
+	int readIdx_;
 	//写缓冲区中待发送的字节数
-	int m_write_idx;
+	int writeIdx_;
 	
-	
+/*	
 	//主状态机当前所处的状态
 	CHECK_STATE m_check_state;
 	//请求方法
@@ -151,6 +149,11 @@ private:
 	//writev的两个成员，其中m_iv_count表示被写内存块的数量
 	struct iovec m_iv[2];
 	int m_iv_count;
+	*/
+	int connFd_;
+	Evenloop* loop_;
+	std::shared_ptr<Channel> channel_; 
+	callBack handleMessages_;
 	
 };
 

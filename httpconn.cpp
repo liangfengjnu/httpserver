@@ -12,6 +12,8 @@ const char* error_500_title = "Internal Error";
 const char* error_500_form = "There was an unusual problem serving the requested file.\n";
 const char* doc_root = "/var/www/html";
 
+
+
 int setnonblocking(int fd){
 	int old_option = fcntl(fd, F_GETFL);
 	int new_option = old_option | O_NONBLOCK;
@@ -45,7 +47,46 @@ void modfd(int epollfd, int fd, int ev){
 int httpConn::m_user_count = 0;
 int httpConn::m_epollfd = -1;
 
+HttpConn::HttpConn(ventloop* loop, int connFd):
+loop_(loop),
+connFd_(connFd),
+channel_(new Channel(loop_))
+{
+	setnonblocking(connFd);  //要修改
+	channel_->setFd(connFd);
+	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
+	
+	channel_->setReadHandler(std::bind(&HttpConn::handleRead(), this));
+	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite(), this));
+	
+	loop_->addToPoller(channel_);
+}
 
+void HttpConn::handleRead()
+{
+//	printf("read function\n");	
+	int bytes_read = 0;
+	while(true){
+		bytes_read = recv(connFd_, readBuff_ + readIdx_, 
+						  READ_BUFFER_SIZE - readIdx_, 0);
+		if(bytes_read == -1){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				break;
+			}
+			return false;
+		}
+		else if(bytes_read == 0)
+		{
+			return false;
+		}
+		m_read_idx += bytes_read;
+	}
+	handleMessages();
+}
+
+void HttpConn::handleWrite()
+{}
+/*
 void httpConn::closeConn(bool realClose){
 	if(realClose && (m_sockfd == -1)){
 		removefd(m_epollfd, m_sockfd);
@@ -411,8 +452,8 @@ httpConn::HTTP_CODE httpConn::parse_request_line(char* text){
 	m_check_state = CHECK_STATE_HEADER;
 	return NO_REQUEST;
 */
-}
-
+//}
+/*
 //解析HTTP请求的一个头部信息
 httpConn::HTTP_CODE httpConn::parse_headers(char* text){
 	//遇到空行，表示头部字段解析完毕
@@ -420,7 +461,7 @@ httpConn::HTTP_CODE httpConn::parse_headers(char* text){
 		/*
 		如果HTTP请求有消息体，则还需要读取m_content_length字节的消息体，
 		状态机转移到CHECK_STATE_CONTENT状态
-		*/
+		
 		if(m_content_length != 0){
 			m_check_state = CHECK_STATE_CONTENT;
 			return NO_REQUEST;
@@ -491,5 +532,11 @@ httpConn::HTTP_CODE httpConn::do_request(){
 //		printf("文件不存在");
 //		exit(1);
 //	}
-	return FILE_REQUEST;
+//	return FILE_REQUEST;
+//}
+
+void HttpConn::handleMessages()
+{
+	if(handleMessages_)
+		handleMessages_();
 }

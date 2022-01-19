@@ -24,9 +24,6 @@ Server::Server(Eventloop* loop, int port)
 	{
 		isClose_ = true;
 	}
-	acceptChannel_->setFd(listenFd_);
-	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
-	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
 }
 
 bool Server::initServer()
@@ -71,7 +68,7 @@ bool Server::initServer()
         return false;
     }
 
-	/*
+	
 	ret = listen(listenFd_, 5);
 	if(ret < 0) 
 	{
@@ -83,7 +80,7 @@ bool Server::initServer()
 	//epoll_event events[MAX_EVENT_NUMBER];
 	//int epollfd = epoll_create(5);
 	
-	
+	/*
 	ret = epoller_->addFd(listenFd_, listenEvent_ | EPOLLIN);
 	
 	if(ret == 0) 
@@ -118,55 +115,19 @@ void Server::handleNewConn()
 	}
 	
 	httpConn* conn = new HttpConn(loop_, connFd);
+	conn->setHandleMessages(std::bind(&Server::onMessages(), this));
 	//conn_->set
 }
 
 void Server::start()
 {
-/*
-	while(！isClose_)
-	{
-		int number = epoller_->wait(epollfd, events, MAX_EVENT_NUMBER, -1);
-		if((number < 0) && (errno != EINTR)){
-			printf("epoll failure\n");
-			break;
-		}
-		
-		for(int i = 0; i < number; ++i){
-			int sockfd = events[i].data.fd;
-			if(sockfd == listenfd){
-				struct sockaddr_in client_address;
-				socklen_t client_addrlength = sizeof(client_address);
-				int connfd = accept(listenfd, (struct sockaddr*)&client_address, &client_addrlength);
-				if(connfd < 0){
-					printf("error is: %d\n", errno);
-					continue;
-				}
-				if(httpConn::m_user_count >= MAX_FD){
-					show_error(connfd, "Internal server busy");
-					continue;
-				}
-				
-				users[connfd].init(connfd, client_address);
-			}
-			else if(events[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)){
-				users[sockfd].closeConn();
-			}
-			else if(events[i].events & EPOLLIN){
-				if(users[sockfd].read()){
-					pool_->append(users + sockfd);
-				}
-				else{
-					users[sockfd].closeConn();
-				}
-			}
-			else if(events[i].events & EPOLLOUT){
-				if(!users[sockfd].write()){
-					users[sockfd].closeConn();
-				}
-			}
-			else {}
-		}
-	}
-*/
+	acceptChannel_->setFd(listenFd_);
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
+	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
+	loop_->addToPoller(acceptChannel_);
+}
+
+void Server::onMessages()
+{
+	
 }

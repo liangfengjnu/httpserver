@@ -26,6 +26,7 @@ public:
 	void handleEvents();
 	
 	void setEvents(__uint32_t ev){events_ = ev;}
+	__uint32_t getEvents(){return events_;}
 	void setRevents(__uint32_t ev){revents_ = ev;}
 
 private:

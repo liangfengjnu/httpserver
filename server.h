@@ -27,6 +27,7 @@ public:
 	
 	void start();
 	void handleNewConn();
+	void onMessages();
 	
 private:
 	bool initServer();
@@ -34,7 +35,7 @@ private:
 private:
 	Eventloop loop_;
 	int listenFd_;
-	Channel acceptChannel_;
+	std::shared_ptr<Channel> acceptChannel_;
 	/*
 	static const int MAX_FD = 65536;
 	static const int MAX_EVENT_NUMBER = 10000;

@@ -37,3 +37,11 @@ void Epoller::fillChannelList(int eventNums, std::vector<Channel*> channelList)
 		channelList->push_back(channel);
 	}
 }
+
+void Epoller::epollAdd(std::shared_ptr<Channel> channel)
+{
+	epoll_event ev = {0};
+	ev.data.fd = channel->getFd();
+	ev.events = channel->getEvents();
+	epoll_ctl(epoller_->epollFd_, EPOLL_CTL_ADD, channel->getFd(), &ev);
+}

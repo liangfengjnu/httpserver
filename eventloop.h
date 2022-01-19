@@ -13,7 +13,7 @@ public:
 	~Eventloop();
 	
 	void loop();
-
+	void addToPoller(std::shared_ptr<Channel> channel);
 private:
 	Channel* channel_;
 	Epoller* epoller_;
