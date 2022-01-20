@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "httpconn.h"
+#include "httprequest.h"
 #include "channel.h"
 
 #define MAX_FD 65536
@@ -32,13 +33,14 @@ public:
 	
 	void start();
 	void handleNewConn();
-	void onMessages();
+	void onRequest(Buffer& buffer);
 	
 private:
 	bool initServer();
 	
 private:
 	Eventloop* loop_;
+	HttpRequest request_;
 	int listenFd_;
 	int port_;
 	std::shared_ptr<Channel> acceptChannel_;

@@ -4,6 +4,7 @@
 Channel::Channel(Eventloop* loop) 
 :loop_(loop),
  events_(0),
+ revents_(0),
  fd_(0)
 {
 	

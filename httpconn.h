@@ -5,7 +5,6 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/epoll.h>
-#include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -23,6 +22,7 @@
 #include <memory>
 
 #include "locker.h"
+#include "buffer.h"
 
 class Channel;
 class Eventloop;
@@ -30,20 +30,19 @@ class Eventloop;
 class HttpConn{
 private:
 	typedef std::function<void()> callBack;
+	typedef std::function<void(Buffer& buffer)> messageCallBack;
 public:
 	HttpConn(Eventloop* loop, int connFd);
 	~HttpConn(){}
 
 	
-	void setHandleMessages(callBack&& handleMessages){handleMessages_ = handleMessages;}
+	void setHandleMessages(messageCallBack&& handleMessages){handleMessages_ = handleMessages;}
 	
 	void handleRead();
 	void handleWrite();
-	void handleMessages();
+	void handleMessages(Buffer& buffer);
 	
 public:
-	static const int READ_BUFFER_SIZE = 2048;
-	static const int WRITE_BUFFER_SIZE = 1024;
 	/*
 	//文件名的最大长度
 	static const int FILENAME_LEN = 200;
@@ -111,9 +110,9 @@ private:
 	sockaddr_in m_address;
 	
 	//读缓冲区
-	char readBuff_[READ_BUFFER_SIZE];
+	Buffer readBuff_;
 	//写缓冲区
-	char m_write_buf[WRITE_BUFFER_SIZE];
+	Buffer writeBuff_;
 	//当前正在解析的行的起始位置
 	int m_start_line;
 	//当前正在分析的字符在读缓冲区中的位置
@@ -159,7 +158,7 @@ private:
 	int connFd_;
 	Eventloop* loop_;
 	std::shared_ptr<Channel> channel_; 
-	callBack handleMessages_;
+	messageCallBack handleMessages_;
 	
 };
 

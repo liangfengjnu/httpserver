@@ -1,7 +1,10 @@
 #include "epoller.h"
 #include "channel.h"
+#include <iostream>
 
-Epoller::Epoller(int maxEvent) : events_(maxEvent)
+Epoller::Epoller(Eventloop* loop) : 
+loop_(loop),
+events_(512)
 {
 	epollFd_ =  epoll_create(512);
 }
@@ -11,38 +14,47 @@ Epoller::~Epoller()
 	close(epollFd_);
 }
 
-void Epoller::wait(std::vector<Channel*>* channelList)
+void Epoller::poll(std::vector<Channel*>* channelList)
 {
 	int eventNums = epoll_wait(epollFd_, &*events_.begin(),
 						 static_cast<int>(events_.size()),
-						 NULL);
+						 0);
 	int savedErrno = errno;
 	
 	if(eventNums > 0)
 	{
 		fillChannelList(eventNums, channelList);
 	}
+
 }
 
 void Epoller::fillChannelList(int eventNums, std::vector<Channel*>* channelList)
 {
+
 	for(int i = 0; i < eventNums; ++i)
 	{
-		Channel* channel = static_cast<Channel*>(events_[i].data.ptr);
-		int fd = channel->getFd();
-		std::map<int, Channel*>::const_iterator it = channels_.find(fd);
-		assert(it != channels_.end());
-		assert(it->second == channel);
-		
+		int fd =  events_[i].data.fd;
+		std::shared_ptr<Channel> channel = channels_[fd];
 		channel->setRevents(events_[i].events);
-		channelList->push_back(channel);
+		channelList->push_back(channel.get());
 	}
+	
+}
+
+int Epoller::setNonBlocking(int fd){
+	int old_option = fcntl(fd, F_GETFL);
+	int new_option = old_option | O_NONBLOCK;
+	fcntl(fd, F_SETFL, new_option);
+	return old_option;
 }
 
 void Epoller::epollAdd(std::shared_ptr<Channel> channel)
 {
-	epoll_event ev = {0};
-	ev.data.fd = channel->getFd();
+	struct epoll_event ev = {0};
+	int fd = channel->getFd();
+	setNonBlocking(fd);
+	ev.data.fd = fd;
+	channels_[fd] = channel;
 	ev.events = channel->getEvents();
-	epoll_ctl(epollFd_, EPOLL_CTL_ADD, channel->getFd(), &ev);
+	epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &ev);
 }

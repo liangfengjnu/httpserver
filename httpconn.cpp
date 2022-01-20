@@ -14,62 +14,29 @@ const char* error_500_form = "There was an unusual problem serving the requested
 const char* doc_root = "/var/www/html";
 
 
-
-int setnonblocking(int fd){
-	int old_option = fcntl(fd, F_GETFL);
-	int new_option = old_option | O_NONBLOCK;
-	fcntl(fd, F_SETFL, new_option);
-	return old_option;
-}
-
-void addfd(int epollfd, int fd, bool one_shot){
-	epoll_event event;
-	event.data.fd = fd;
-	event.events = EPOLLIN | EPOLLET | EPOLLRDHUP;
-	if(one_shot){
-		event.events |= EPOLLONESHOT;
-	}
-	epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event);
-	setnonblocking(fd);
-}
-
-void removefd(int epollfd, int fd){
-	epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, 0);
-	close(fd);
-}
-
-void modfd(int epollfd, int fd, int ev){
-	epoll_event event;
-	event.data.fd = fd;
-	event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
-	epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
-}
-
-
 HttpConn::HttpConn(Eventloop* loop, int connFd):
 loop_(loop),
 connFd_(connFd),
 channel_(new Channel(loop_))
 {
-	setnonblocking(connFd);  //要修改
-	channel_->setFd(connFd);
-	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
+	printf("httpconn construction : %d\n", connFd_);
+	channel_->setFd(connFd_);
 	
+	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	channel_->setReadHandler(std::bind(&HttpConn::handleRead, this));
 	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite, this));
-	
 	loop_->addToPoller(channel_);
 }
 
 void HttpConn::handleRead()
 {
-//	printf("read function\n");	
+	printf("read function\n");	
+	int saveErrno = 0;  //要改
 	int bytes_read = 0;
 	while(true){
-		bytes_read = recv(connFd_, readBuff_ + readIdx_, 
-						  READ_BUFFER_SIZE - readIdx_, 0);
+		bytes_read = readBuff_.readFd(connFd_, &saveErrno);
 		if(bytes_read == -1){
-			if(errno == EAGAIN || errno == EWOULDBLOCK){
+			if(saveErrno == EAGAIN || saveErrno == EWOULDBLOCK){
 				break;
 			}
 			return;
@@ -78,13 +45,14 @@ void HttpConn::handleRead()
 		{
 			return;
 		}
-		readIdx_ += bytes_read;
 	}
-	handleMessages();
+	handleMessages(readBuff_);
 }
 
 void HttpConn::handleWrite()
-{}
+{
+	
+}
 /*
 void httpConn::closeConn(bool realClose){
 	if(realClose && (m_sockfd == -1)){
@@ -534,8 +502,8 @@ httpConn::HTTP_CODE httpConn::do_request(){
 //	return FILE_REQUEST;
 //}
 
-void HttpConn::handleMessages()
+void HttpConn::handleMessages(Buffer& readBuff_)
 {
 	if(handleMessages_)
-		handleMessages_();
+		handleMessages_(readBuff_);
 }

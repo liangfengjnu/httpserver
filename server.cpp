@@ -3,6 +3,7 @@
 
 
 using namespace std;
+using std::placeholders::_1;
 
 Server::Server(Eventloop* loop, int port)
 :loop_(loop),
@@ -10,29 +11,18 @@ Server::Server(Eventloop* loop, int port)
  acceptChannel_(new Channel(loop_))
 {
 	
-	/*
-	try{
-		pool_ = new threadpool<httpConn>;
-	}
-	catch(...){
-		return 1;
-	}
-
-	epoller_ = new epoller();
-	users_ = new httpConn[MAX_FD];
-	assert(users);
-*/
-	if(initServer())
+	if(!initServer())
 	{
-		//isClose_ = true;
+		printf("server init failed\n");
 	}
+	
 }
 
 bool Server::initServer()
 {
 	listenFd_ = socket(PF_INET, SOCK_STREAM, 0);
 	if(listenFd_ < 0) {
-        printf("Create socket error!", port_);
+        printf("Create socket error! %d", port_);
         return false;
     }	
 	
@@ -41,7 +31,7 @@ bool Server::initServer()
 	setsockopt(listenFd_, SOL_SOCKET, SO_LINGER, &tmp, sizeof(tmp));
     if(ret < 0) {
         close(listenFd_);
-        printf("Init linger error!", port_);
+        printf("Init linger error! %d", port_);
         return false;
     }
 
@@ -78,22 +68,11 @@ bool Server::initServer()
         close(listenFd_);
         return false;
     }
-	
-	//epoll_event events[MAX_EVENT_NUMBER];
-	//int epollfd = epoll_create(5);
-	
-	/*
-	ret = epoller_->addFd(listenFd_, listenEvent_ | EPOLLIN);
-	
-	if(ret == 0) 
-	{
-        printf("Add listen error!");
-        close(listenFd_);
-        return false;
-    }
-	*/
-	//httpConn::m_epollfd = epollfd;
+
+	return true;
 }
+
+
 
 Server::~Server()
 {
@@ -112,11 +91,12 @@ void Server::handleNewConn()
 	int connFd = accept(listenFd_, (struct sockaddr*)&client_address, &client_addrlength);
 	if(connFd < 0)
 	{
-		printf("error is: %d\n", errno);
+		return;
 	}
-	
+	printf("connection %d is succuess\n", connFd);
 	HttpConn* conn = new HttpConn(loop_, connFd);
-	conn->setHandleMessages(std::bind(&Server::onMessages, this));
+	conn->setHandleMessages(std::bind(&Server::onRequest, this, _1));
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	//conn_->set
 }
 
@@ -128,7 +108,13 @@ void Server::start()
 	loop_->addToPoller(acceptChannel_);
 }
 
-void Server::onMessages()
+//处理请求头
+void Server::onRequest(Buffer& readBuff_)
 {
-	
+	std::cout<<readBuff_.retrieveAllToStr()<<std::endl;
+
+	//if(!request_.parse(readBuff_))
+	//{
+//		printf("request error!\n");
+	//}
 }

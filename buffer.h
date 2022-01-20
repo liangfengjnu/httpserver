@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#include <iostream>
+#include <string>
 
 class Buffer
 {
