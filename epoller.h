@@ -24,6 +24,9 @@ public:
 	
 	int setNonBlocking(int fd);
 	void epollAdd(std::shared_ptr<Channel> channel);
+	void updateChannel(std::shared_ptr<Channel> channel);
+	void epollDelete(std::shared_ptr<Channel> channel);
+	void epollMod(std::shared_ptr<Channel> channel);
 private:
 	int epollFd_;
 	std::vector<struct epoll_event> events_;

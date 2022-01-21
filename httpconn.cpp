@@ -33,27 +33,45 @@ void HttpConn::handleRead()
 	printf("read function\n");	
 	int saveErrno = 0;  //要改
 	int bytes_read = 0;
-	while(true){
-		bytes_read = readBuff_.readFd(connFd_, &saveErrno);
-		if(bytes_read == -1){
-			if(saveErrno == EAGAIN || saveErrno == EWOULDBLOCK){
-				break;
-			}
-			return;
-		}
-		else if(bytes_read == 0)
-		{
-			return;
-		}
+	bytes_read = readBuff_.readFd(connFd_, &saveErrno);
+	if (bytes_read > 0)
+	{
+		printf("read bytes are : %d\n", bytes_read);
+		handleMessages(readBuff_);
 	}
-	handleMessages(readBuff_);
+	else if (bytes_read == 0)
+	{
+		printf("handleClose()\n");
+		handleClose();
+	}
+	else
+	{
+		printf("error is : %d", saveErrno);
+		errno = saveErrno;
+		printf("TcpConnection::handleRead\n");
+		handleClose();
+		printf("after close\n");
+	}
+
+}
+
+void HttpConn::handleClose()
+{
+
+	channel_->disableAll();
 }
 
 void HttpConn::handleWrite()
 {
 	
 }
+
 /*
+void HttpConn::handleError()
+{
+
+}
+
 void httpConn::closeConn(bool realClose){
 	if(realClose && (m_sockfd == -1)){
 		removefd(m_epollfd, m_sockfd);

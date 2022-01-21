@@ -29,6 +29,9 @@ public:
 	void handleConn();
 	
 	void handleEvents();
+	bool isNoneEvent(){return events_ == 0;}
+	void disableAll(){events_ = 0; update();};
+	void update();
 	
 	void setEvents(__uint32_t ev){events_ = ev;}
 	__uint32_t getEvents(){return events_;}

@@ -15,6 +15,8 @@ public:
 	
 	void loop();
 	void addToPoller(std::shared_ptr<Channel> channel);
+	void updateToChannel(Channel* channel);
+
 private:
 	Channel* channel_;
 	Epoller* epoller_;

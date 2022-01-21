@@ -40,6 +40,7 @@ public:
 	
 	void handleRead();
 	void handleWrite();
+	void handleClose();
 	void handleMessages(Buffer& buffer);
 	
 public:

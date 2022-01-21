@@ -19,36 +19,46 @@ void Channel::handleEvents()
 {
 	events_ = 0;
     if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
-      events_ = 0;
-      return;
+		events_ = 0;
+		return;
     }
     if (revents_ & EPOLLERR) {
-      if (errorHandler_) errorHandler_();
-      events_ = 0;
-      return;
+		if (errorHandler_) errorHandler_();
+		events_ = 0;
+		return;
     }
     if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
-      handleRead();
+		handleRead();
     }
     if (revents_ & EPOLLOUT) {
-      handleWrite();
+		handleWrite();
     }
 }
 
-void Channel::handleRead() {
-  if (readHandler_) {
-    readHandler_();
-  }
+void Channel::update()
+{
+  //addedToLoop_ = true;
+  loop_->updateToChannel(this);
 }
 
+
+void Channel::handleRead() {
+	if(readHandler_) 
+	{
+		readHandler_();
+	}
+}	
+
 void Channel::handleWrite() {
-  if (writeHandler_) {
-    writeHandler_();
-  }
+	if(writeHandler_) 
+	{
+		writeHandler_();
+	}
 }
 
 void Channel::handleConn() {
-  if (connHandler_) {
-    connHandler_();
-  }
+	if(connHandler_) 
+	{
+		connHandler_();
+	}
 }

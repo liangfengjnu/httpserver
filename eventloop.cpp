@@ -32,3 +32,10 @@ void Eventloop::addToPoller(std::shared_ptr<Channel> channel)
 {
 	epoller_->epollAdd(channel);
 }
+
+
+void Eventloop::updateToChannel(Channel* channel)
+{
+	epoller_->updateChannel(std::shared_ptr<Channel>(channel));
+}
+

@@ -58,3 +58,37 @@ void Epoller::epollAdd(std::shared_ptr<Channel> channel)
 	ev.events = channel->getEvents();
 	epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &ev);
 }
+
+void Epoller::updateChannel(std::shared_ptr<Channel> channel)
+{
+
+    // update existing one with EPOLL_CTL_MOD/DEL
+    if (channel->isNoneEvent())
+    {
+		epollDelete(channel);
+    }
+    else
+    {
+		epollMod(channel);
+    }
+}
+
+void Epoller::epollDelete(std::shared_ptr<Channel> channel)
+{
+	struct epoll_event ev = {0};
+	int fd = channel->getFd();
+	ev.data.fd = fd;
+	channels_[fd] = channel;
+	ev.events = channel->getEvents();
+	epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, &ev);
+}
+
+void Epoller::epollMod(std::shared_ptr<Channel> channel)
+{
+	struct epoll_event ev = {0};
+	int fd = channel->getFd();
+	ev.data.fd = fd;
+	channels_[fd] = channel;
+	ev.events = channel->getEvents();
+	epoll_ctl(epollFd_, EPOLL_CTL_MOD, fd, &ev);
+}
