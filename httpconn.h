@@ -23,25 +23,33 @@
 
 #include "locker.h"
 #include "buffer.h"
+#include "callbacks.h"
 
 class Channel;
 class Eventloop;
 
-class HttpConn{
+
+
+
+class HttpConn : public std::enable_shared_from_this<HttpConn>
+{
 private:
 	typedef std::function<void()> callBack;
 	typedef std::function<void(Buffer& buffer)> messageCallBack;
+	typedef std::function<void (const HttpConnPtr&)> closeCallBack;
 public:
 	HttpConn(Eventloop* loop, int connFd);
 	~HttpConn(){}
 
 	
 	void setHandleMessages(messageCallBack&& handleMessages){handleMessages_ = handleMessages;}
+	void setCloseCallBack(closeCallBack&& handleClose){closeCallBack_ = handleClose;}
 	
 	void handleRead();
 	void handleWrite();
 	void handleClose();
 	void handleMessages(Buffer& buffer);
+	void connectDestroy();
 	
 public:
 	/*
@@ -160,8 +168,8 @@ private:
 	Eventloop* loop_;
 	std::shared_ptr<Channel> channel_; 
 	messageCallBack handleMessages_;
+	closeCallBack closeCallBack_;
 	
 };
-
-
+typedef std::shared_ptr<HttpConn> HttpConnPtr;
 #endif

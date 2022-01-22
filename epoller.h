@@ -23,14 +23,15 @@ public:
 	void fillChannelList(int events, std::vector<Channel*>* channelList);
 	
 	int setNonBlocking(int fd);
-	void epollAdd(std::shared_ptr<Channel> channel);
-	void updateChannel(std::shared_ptr<Channel> channel);
-	void epollDelete(std::shared_ptr<Channel> channel);
-	void epollMod(std::shared_ptr<Channel> channel);
+	void epollAdd(Channel* channel);
+	void updateChannel(Channel* channel);
+	void removeChannel(Channel* channel);
+	void epollDelete(Channel* channel);
+	void epollMod(Channel* channel);
 private:
 	int epollFd_;
 	std::vector<struct epoll_event> events_;
-	std::map<int, std::shared_ptr<Channel>> channels_;
+	std::map<int, Channel*> channels_;
 	Eventloop* loop_;
 };
 

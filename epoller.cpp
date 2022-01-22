@@ -3,8 +3,8 @@
 #include <iostream>
 
 Epoller::Epoller(Eventloop* loop) : 
-loop_(loop),
-events_(512)
+events_(512),
+loop_(loop)
 {
 	epollFd_ =  epoll_create(512);
 }
@@ -34,9 +34,9 @@ void Epoller::fillChannelList(int eventNums, std::vector<Channel*>* channelList)
 	for(int i = 0; i < eventNums; ++i)
 	{
 		int fd =  events_[i].data.fd;
-		std::shared_ptr<Channel> channel = channels_[fd];
+		Channel* channel = channels_[fd];
 		channel->setRevents(events_[i].events);
-		channelList->push_back(channel.get());
+		channelList->push_back(channel);
 	}
 	
 }
@@ -48,7 +48,7 @@ int Epoller::setNonBlocking(int fd){
 	return old_option;
 }
 
-void Epoller::epollAdd(std::shared_ptr<Channel> channel)
+void Epoller::epollAdd(Channel* channel)
 {
 	struct epoll_event ev = {0};
 	int fd = channel->getFd();
@@ -59,7 +59,7 @@ void Epoller::epollAdd(std::shared_ptr<Channel> channel)
 	epoll_ctl(epollFd_, EPOLL_CTL_ADD, fd, &ev);
 }
 
-void Epoller::updateChannel(std::shared_ptr<Channel> channel)
+void Epoller::updateChannel(Channel* channel)
 {
 
     // update existing one with EPOLL_CTL_MOD/DEL
@@ -73,7 +73,14 @@ void Epoller::updateChannel(std::shared_ptr<Channel> channel)
     }
 }
 
-void Epoller::epollDelete(std::shared_ptr<Channel> channel)
+void Epoller::removeChannel(Channel* channel)
+{
+	int fd = channel->getFd();
+	epollDelete(channel);
+	channels_.erase(fd);
+}
+
+void Epoller::epollDelete(Channel* channel)
 {
 	struct epoll_event ev = {0};
 	int fd = channel->getFd();
@@ -83,7 +90,7 @@ void Epoller::epollDelete(std::shared_ptr<Channel> channel)
 	epoll_ctl(epollFd_, EPOLL_CTL_DEL, fd, &ev);
 }
 
-void Epoller::epollMod(std::shared_ptr<Channel> channel)
+void Epoller::epollMod(Channel* channel)
 {
 	struct epoll_event ev = {0};
 	int fd = channel->getFd();

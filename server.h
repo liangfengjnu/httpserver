@@ -31,31 +31,25 @@ public:
 	
 	~Server();
 	
+	Eventloop *getLoop() const { return loop_; }
 	void start();
 	void handleNewConn();
 	void onRequest(Buffer& buffer);
+	void removeConnection(const HttpConnPtr& conn);
 	
 private:
 	bool initServer();
 	
 private:
 	Eventloop* loop_;
+	//int threadNum_;
 	HttpRequest request_;
 	int listenFd_;
 	int port_;
+	int nextConnId_;
 	std::shared_ptr<Channel> acceptChannel_;
-	/*
-	static const int MAX_FD = 65536;
-	static const int MAX_EVENT_NUMBER = 10000;
-	int listenFd_;
-	bool isClose_;
-	int userCount_;
-	httpConn* users_;
-	
-	
-	std::unique_ptr<epoller> epoller_;
-	std::unique_ptr<httpConn> pool_;
-	*/
+	std::map<std::string, HttpConnPtr> ConnectionMap_;
+	//std::unique_ptr<EventLoopThreadPool> eventLoopThreadPool_;
 };
 
 #endif

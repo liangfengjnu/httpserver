@@ -27,11 +27,19 @@ void Channel::handleEvents()
 		events_ = 0;
 		return;
     }
-    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
-		handleRead();
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) 
+	{
+		if(readHandler_) 
+		{
+			readHandler_();
+		}
     }
-    if (revents_ & EPOLLOUT) {
-		handleWrite();
+    if (revents_ & EPOLLOUT) 
+	{
+		if(writeHandler_) 
+		{
+			writeHandler_();
+		}
     }
 }
 
@@ -41,6 +49,10 @@ void Channel::update()
   loop_->updateToChannel(this);
 }
 
+void Channel::remove()
+{
+	loop_->removeChannel(this);
+}
 
 void Channel::handleRead() {
 	if(readHandler_) 

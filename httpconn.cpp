@@ -2,6 +2,8 @@
 #include "channel.h"
 #include "eventloop.h"
 
+#include <errno.h>
+
 const char* ok_200_title = "OK";
 const char* error_400_title = "BAD_REQUEST";
 const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
@@ -25,7 +27,7 @@ channel_(new Channel(loop_))
 	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	channel_->setReadHandler(std::bind(&HttpConn::handleRead, this));
 	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite, this));
-	loop_->addToPoller(channel_);
+	loop_->addToPoller(channel_.get());
 }
 
 void HttpConn::handleRead()
@@ -33,6 +35,7 @@ void HttpConn::handleRead()
 	printf("read function\n");	
 	int saveErrno = 0;  //要改
 	int bytes_read = 0;
+
 	bytes_read = readBuff_.readFd(connFd_, &saveErrno);
 	if (bytes_read > 0)
 	{
@@ -49,7 +52,7 @@ void HttpConn::handleRead()
 		printf("error is : %d", saveErrno);
 		errno = saveErrno;
 		printf("TcpConnection::handleRead\n");
-		handleClose();
+		//handleClose();
 		printf("after close\n");
 	}
 
@@ -59,11 +62,52 @@ void HttpConn::handleClose()
 {
 
 	channel_->disableAll();
+	HttpConnPtr guardThis(shared_from_this());
+	closeCallBack_(guardThis);
 }
 
 void HttpConn::handleWrite()
 {
+	printf("handleWrite()\n");
 	
+   // ssize_t len = -1;
+   // int saveErrno = 0; 
+    // do 
+	// {
+        // len = writev(fd_, iov_, iovCnt_);
+        // if(len <= 0) {
+            // saveErrno = errno;
+            // break;
+        // }
+        // if(iov_[0].iov_len + iov_[1].iov_len  == 0) { break; } /* 传输结束 */
+        // else if(static_cast<size_t>(len) > iov_[0].iov_len) {
+            // iov_[1].iov_base = (uint8_t*) iov_[1].iov_base + (len - iov_[0].iov_len);
+            // iov_[1].iov_len -= (len - iov_[0].iov_len);
+            // if(iov_[0].iov_len) {
+                // writeBuff_.retrieveAll();
+                // iov_[0].iov_len = 0;
+            // }
+        // }
+        // else {
+            // iov_[0].iov_base = (uint8_t*)iov_[0].iov_base + len; 
+            // iov_[0].iov_len -= len; 
+            // writeBuff_.retrieve(len);
+        // }
+    // } while(EPOLLET || iov_[0].iov_len + iov_[1].iov_len > 10240);
+    
+	// if(iov_[0].iov_len + iov_[1].iov_len == 0)
+	// {
+		//写完了
+	// }else if(len < 0)
+	// {
+		// if(saveErrno == EAGAIN)
+		// {
+			//继续传输
+			// channel_->setEvents(EPOLLOUT | EPOLLET | EPOLLONESHOT | EPOLLRDHUP);
+			// channel_->update();
+			// return ;
+		// }
+	// }
 }
 
 /*
@@ -524,4 +568,10 @@ void HttpConn::handleMessages(Buffer& readBuff_)
 {
 	if(handleMessages_)
 		handleMessages_(readBuff_);
+}
+
+void HttpConn::connectDestroy()
+{
+	channel_->disableAll();
+	channel_->remove();
 }

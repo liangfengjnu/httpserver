@@ -5,17 +5,37 @@
 using namespace std;
 using std::placeholders::_1;
 
-Server::Server(Eventloop* loop, int port)
-:loop_(loop),
- port_(port), 
- acceptChannel_(new Channel(loop_))
+
+
+Server::Server(Eventloop* loop, int port):
+	//threadNum_(threadNum),
+	loop_(loop),
+	port_(port), 
+	nextConnId_(0),
+	acceptChannel_(new Channel(loop_))
+	//eventLoopThreadPool_(new EventLoopThreadPool(loop_, threadNum)),
 {
-	
 	if(!initServer())
 	{
 		printf("server init failed\n");
 	}
 	
+}
+
+Server::~Server()
+{
+	/*
+	close(epollfd);
+	close(listenfd);
+	delete []users;
+	delete pool_;
+*/
+	for (auto& item : ConnectionMap_)
+	{
+		HttpConnPtr conn(item.second);
+		item.second.reset();
+		conn->connectDestroy();
+	}
 }
 
 bool Server::initServer()
@@ -74,28 +94,30 @@ bool Server::initServer()
 
 
 
-Server::~Server()
-{
-	/*
-	close(epollfd);
-	close(listenfd);
-	delete []users;
-	delete pool_;
-*/
-}
+
 
 void Server::handleNewConn()
 {
 	struct sockaddr_in client_address;
 	socklen_t client_addrlength = sizeof(client_address);
 	int connFd = accept(listenFd_, (struct sockaddr*)&client_address, &client_addrlength);
-	if(connFd < 0)
+	if(connFd <= 0)
 	{
 		return;
 	}
+	
+	char buf[64];
+	snprintf(buf, sizeof buf, "-%d#%d", port_, nextConnId_);
+	++nextConnId_;
+	string connName = buf;
+	
+	
 	printf("connection %d is succuess\n", connFd);
-	HttpConn* conn = new HttpConn(loop_, connFd);
+	//HttpConn* conn = new HttpConn(loop_, connFd);
+	HttpConnPtr conn (new HttpConn(loop_, connFd));
+	ConnectionMap_[connName] = conn;
 	conn->setHandleMessages(std::bind(&Server::onRequest, this, _1));
+	conn->setCloseCallBack(std::bind(&Server::removeConnection, this, _1));
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	//conn_->set
 }
@@ -105,7 +127,7 @@ void Server::start()
 	acceptChannel_->setFd(listenFd_);
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
-	loop_->addToPoller(acceptChannel_);
+	loop_->addToPoller(acceptChannel_.get());
 }
 
 //处理请求头
@@ -113,8 +135,19 @@ void Server::onRequest(Buffer& readBuff_)
 {
 	std::cout<<readBuff_.retrieveAllToStr()<<std::endl;
 
-	//if(!request_.parse(readBuff_))
-	//{
-//		printf("request error!\n");
-	//}
+	if(!request_.parse(readBuff_))
+	{
+		printf("request error!\n");
+	}
+	else
+	{
+		//写回复
+		//查文件合法
+		//写文件
+	}
+}
+
+void Server::removeConnection(const HttpConnPtr& conn)
+{
+	conn->connectDestroy();
 }

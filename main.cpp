@@ -35,15 +35,15 @@ void show_error(int connfd, const char* info){
 
 int main(int argc, char* argv[]){
 	
-	if(argc < 2){
-		printf("usage : %s port_number\n", basename(argv[0]));
-		return 1;
-	}
+	// if(argc < 2){
+		// printf("usage : %s port_number\n", basename(argv[0]));
+		// return 1;
+	// }
 	Eventloop mainloop;
 	//const char* ip = argv[1];
-	int port = atoi(argv[1]);
+	//int port = atoi(argv[1]);
 	addsig(SIGPIPE, SIG_IGN);
-	Server server(&mainloop, port);
+	Server server(&mainloop, 5555);
 	server.start();
 	
 	mainloop.loop();
