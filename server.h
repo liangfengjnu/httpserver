@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <netinet/tcp.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -23,7 +24,6 @@
 
 class Eventloop;
 
-
 class Server
 {
 public:
@@ -36,6 +36,7 @@ public:
 	void handleNewConn();
 	void onRequest(Buffer& buffer);
 	void removeConnection(const HttpConnPtr& conn);
+	void handThisConn();
 	
 private:
 	bool initServer();

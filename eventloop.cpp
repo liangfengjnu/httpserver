@@ -60,7 +60,7 @@ void Eventloop::loop()
 	{
 		//int eventCount = 
 		epoller_->poll(&channelList_);
-		printf("the size of channelList_ is %d\n", (int)channelList_.size());
+		//printf("the size of channelList_ is %d\n", (int)channelList_.size());
 		for(Channel* channel : channelList_)
 		{
 			activeChannel_ = channel;

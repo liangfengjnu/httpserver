@@ -48,8 +48,10 @@ public:
 	void handleRead();
 	void handleWrite();
 	void handleClose();
+	void handleConn();
 	void handleMessages(Buffer& buffer);
 	void connectDestroy();
+	void newEvent();
 	
 public:
 	/*

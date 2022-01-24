@@ -1,4 +1,4 @@
-#include "Thread.h"
+#include "thread.h"
 #include <assert.h>
 #include <errno.h>
 #include <linux/unistd.h>
@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <memory>
-#include "CurrentThread.h"
+#include "currentThread.h"
 
 
 #include <iostream>

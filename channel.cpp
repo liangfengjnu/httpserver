@@ -41,6 +41,7 @@ void Channel::handleEvents()
 			writeHandler_();
 		}
     }
+	handleConn();
 }
 
 void Channel::update()
