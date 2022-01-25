@@ -1,13 +1,17 @@
 #ifndef EVENTLOOP_H
 #define EVENTLOOP_H
 
-#include <vector>
+
 #include <memory>
+#include <vector>
+
+
 
 //#include "base/CurrentThread.h"
 
 class Epoller;
 class Channel;
+
 
 class Eventloop
 {
@@ -18,9 +22,9 @@ public:
 	
 	//bool isInLoopThread() const { return threadId_ == CurrentThread::tid(); }
 	void loop();
-	void addToPoller(Channel* channel);
-	void updateToChannel(Channel* channel);
-	void removeChannel(Channel* channel);
+	void addToPoller(std::shared_ptr<Channel> channel, int timeout);
+	void updateToChannel(std::shared_ptr<Channel> channel);
+	void removeChannel(std::shared_ptr<Channel> channel);
 
 private:
 	//bool looping_;
@@ -33,9 +37,7 @@ private:
 	
 	
 	//shared_ptr<Channel> pwakeupChannel_;
-	
-	std::vector<Channel*> channelList_;
-	Channel* activeChannel_;
+	std::vector<std::shared_ptr<Channel>> channelList_;
 	
 	//std::vector<Functor> pendingFunctors_;
 	//bool callingPendingFunctors_;

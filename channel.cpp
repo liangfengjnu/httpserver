@@ -1,5 +1,7 @@
 #include "channel.h"
 #include "eventloop.h"
+#include "Util.h"
+
 
 Channel::Channel(Eventloop* loop) 
 :loop_(loop),
@@ -44,16 +46,6 @@ void Channel::handleEvents()
 	handleConn();
 }
 
-void Channel::update()
-{
-  //addedToLoop_ = true;
-  loop_->updateToChannel(this);
-}
-
-void Channel::remove()
-{
-	loop_->removeChannel(this);
-}
 
 void Channel::handleRead() {
 	if(readHandler_) 

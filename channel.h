@@ -1,6 +1,7 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
+
 #include <functional>
 #include <sys/epoll.h>
 #include <memory>
@@ -8,7 +9,7 @@
 
 class Eventloop;
 
-class Channel
+class Channel 
 {
 private:
 	typedef std::function<void()> callBack;
@@ -30,13 +31,18 @@ public:
 	
 	void handleEvents();
 	bool isNoneEvent(){return events_ == 0;}
-	void disableAll(){events_ = 0; update();};
-	void update();
-	void remove();
-	
+	void disableAll(){events_ = 0;};
+
 	void setEvents(__uint32_t ev){events_ = ev;}
 	__uint32_t getEvents(){return events_;}
 	void setRevents(__uint32_t ev){revents_ = ev;}
+	
+	bool equalAndUpdateLastEvents()
+	{
+		bool ret = (lastEvents_ == events_);
+		lastEvents_ = events_;
+		return ret;
+	}
 
 private:
 
@@ -44,6 +50,7 @@ private:
 	int fd_;
 	__uint32_t events_;
 	__uint32_t revents_;
+	__uint32_t lastEvents_;
 	
 private:
 	callBack readHandler_;

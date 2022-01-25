@@ -21,7 +21,7 @@ TimerNode::~TimerNode()
 
 TimerNode::TimerNode(TimerNode &tn)
     : SPHttpConn(tn.SPHttpConn), expiredTime_(0)
-	{}
+{}
 
 void TimerNode::update(int timeout)
 {

@@ -4,21 +4,18 @@
 
 #include <errno.h>
 
-const char* ok_200_title = "OK";
-const char* error_400_title = "BAD_REQUEST";
-const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
-const char* error_403_title = "Forbidden";
-const char* error_403_form = "You do not have permission to get file from this server.\n";
-const char* error_404_title = "Not Found";
-const char* error_404_form = "The requested file was not found on this server.\n";
-const char* error_500_title = "Internal Error";
-const char* error_500_form = "There was an unusual problem serving the requested file.\n";
-const char* doc_root = "/var/www/html";
-
+const int DEFAULT_EXPIRED_TIME = 2000;              // ms
+const int DEFAULT_KEEP_ALIVE_TIME = 5 * 60 * 1000;  // ms
 
 HttpConn::HttpConn(Eventloop* loop, int connFd):
 	loop_(loop),
 	connFd_(connFd),
+	error_(false),
+	connectionState_(H_CONNECTED),
+	method_(GET),
+	version_(HTTP_11),
+	state_(STATE_PARSE_URI),
+	keepAlive_(false),
 	channel_(new Channel(loop_))
 {
 	printf("httpconn construction : %d\n", connFd_);
@@ -28,7 +25,6 @@ HttpConn::HttpConn(Eventloop* loop, int connFd):
 	channel_->setReadHandler(std::bind(&HttpConn::handleRead, this));
 	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite, this));
 	channel_->setConnHandler(bind(&HttpConn::handleConn, this));
-	
 }
 
 void HttpConn::handleRead()
@@ -41,7 +37,7 @@ void HttpConn::handleRead()
 	if (bytes_read > 0)
 	{
 		printf("read bytes are : %d\n", bytes_read);
-		handleMessages(readBuff_);
+		//handleMessages(readBuff_);
 	}
 	else if (bytes_read == 0)
 	{
@@ -61,59 +57,59 @@ void HttpConn::handleRead()
 
 void HttpConn::handleClose()
 {
-
+	connectionState_ = H_DISCONNECTED;
 	channel_->disableAll();
 	HttpConnPtr guardThis(shared_from_this());
-	closeCallBack_(guardThis);
+	loop_->removeChannel(channel_);
 }
 
 void HttpConn::handleWrite()
 {
 	printf("handleWrite()\n");
-	
-   // ssize_t len = -1;
-   // int saveErrno = 0; 
-    // do 
-	// {
-        // len = writev(fd_, iov_, iovCnt_);
-        // if(len <= 0) {
-            // saveErrno = errno;
-            // break;
-        // }
-        // if(iov_[0].iov_len + iov_[1].iov_len  == 0) { break; } /* 传输结束 */
-        // else if(static_cast<size_t>(len) > iov_[0].iov_len) {
-            // iov_[1].iov_base = (uint8_t*) iov_[1].iov_base + (len - iov_[0].iov_len);
-            // iov_[1].iov_len -= (len - iov_[0].iov_len);
-            // if(iov_[0].iov_len) {
-                // writeBuff_.retrieveAll();
-                // iov_[0].iov_len = 0;
-            // }
-        // }
-        // else {
-            // iov_[0].iov_base = (uint8_t*)iov_[0].iov_base + len; 
-            // iov_[0].iov_len -= len; 
-            // writeBuff_.retrieve(len);
-        // }
-    // } while(EPOLLET || iov_[0].iov_len + iov_[1].iov_len > 10240);
-    
-	// if(iov_[0].iov_len + iov_[1].iov_len == 0)
-	// {
-		//写完了
-	// }else if(len < 0)
-	// {
-		// if(saveErrno == EAGAIN)
-		// {
-			//继续传输
-			// channel_->setEvents(EPOLLOUT | EPOLLET | EPOLLONESHOT | EPOLLRDHUP);
-			// channel_->update();
-			// return ;
-		// }
-	// }
+
 }
 
 void HttpConn::handleConn()
 {
-	
+	__uint32_t events_ = channel_->getEvents();
+	if (!error_ && connectionState_ == H_CONNECTED) 
+	{
+		if (events_ != 0) 
+		{
+			// int timeout = DEFAULT_EXPIRED_TIME;
+			// if (keepAlive_) 
+				// timeout = DEFAULT_KEEP_ALIVE_TIME;
+			if ((events_ & EPOLLIN) && (events_ & EPOLLOUT)) 
+			{
+				events_ = __uint32_t(0);
+				events_ |= EPOLLOUT;
+			}
+			events_ |= EPOLLET;
+			loop_->updateToChannel(channel_);
+		}
+		else if (keepAlive_) 
+		{
+			events_ |= (EPOLLIN | EPOLLET);
+			int timeout = DEFAULT_KEEP_ALIVE_TIME;
+			loop_->updateToChannel(channel_);
+		}
+		else 
+		{
+			events_ |= (EPOLLIN | EPOLLET);
+			//int timeout = (DEFAULT_KEEP_ALIVE_TIME >> 1);
+			loop_->updateToChannel(channel_);
+		}
+	} 
+	else if (!error_ && connectionState_ == H_DISCONNECTING &&
+             (events_ & EPOLLOUT)) 
+	{
+		events_ = (EPOLLOUT | EPOLLET);
+	} 
+	else 
+	{
+		printf("close with errors\n");
+		handleClose();
+	}
 }
 
 void HttpConn::handleMessages(Buffer& readBuff_)
@@ -122,14 +118,8 @@ void HttpConn::handleMessages(Buffer& readBuff_)
 		handleMessages_(readBuff_);
 }
 
-void HttpConn::connectDestroy()
-{
-	channel_->disableAll();
-	channel_->remove();
-}
-
 void HttpConn::newEvent()
 {
-	channel_->setEvent(EPOLLIN | EPOLLET | EPOLLONESHOT);
-	loop_->addToPoller(channel_.get());
+	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
+	loop_->addToPoller(channel_, 0);
 }

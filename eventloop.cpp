@@ -2,6 +2,7 @@
 #include <sys/eventfd.h>
 #include <sys/epoll.h>
 
+#include "Util.h"
 #include "eventloop.h"
 #include "epoller.h"
 #include "channel.h"
@@ -58,29 +59,30 @@ void Eventloop::loop()
 {
 	while(true)
 	{
+		channelList_.clear();
 		//int eventCount = 
-		epoller_->poll(&channelList_);
-		//printf("the size of channelList_ is %d\n", (int)channelList_.size());
-		for(Channel* channel : channelList_)
+		epoller_->poll(channelList_);
+		if(channelList_.size() > 0 )
+			printf("the size of channelList_ is %d\n", (int)channelList_.size());
+		for(auto& channel : channelList_)
 		{
-			activeChannel_ = channel;
-			activeChannel_->handleEvents();
+			channel->handleEvents();
 		}
 	}
 }
 
-void Eventloop::addToPoller(Channel* channel)
+void Eventloop::addToPoller(std::shared_ptr<Channel> channel, int timeout = 0)
 {
-	epoller_->epollAdd(channel);
+	epoller_->epollAdd(channel, timeout);
 }
 
 
-void Eventloop::updateToChannel(Channel* channel)
+void Eventloop::updateToChannel(std::shared_ptr<Channel> channel)
 {
-	epoller_->updateChannel(channel);
+	epoller_->epoll_mod(channel);
 }
 
-void Eventloop::removeChannel(Channel* channel)
+void Eventloop::removeChannel(std::shared_ptr<Channel> channel)
 {
 	epoller_->removeChannel(channel);
 }

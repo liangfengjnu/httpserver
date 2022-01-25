@@ -1,26 +1,18 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include <memory>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <cassert>
-#include <sys/epoll.h>
-#include <memory>
 
 #include "httpconn.h"
 #include "httprequest.h"
 #include "channel.h"
+#include "eventloop.h"
 
-#define MAX_FD 65536
-#define MAX_EVENT_NUMBER 10000
 
 class Eventloop;
 
@@ -35,7 +27,7 @@ public:
 	void start();
 	void handleNewConn();
 	void onRequest(Buffer& buffer);
-	void removeConnection(const HttpConnPtr& conn);
+	//void removeConnection(const HttpConnPtr& conn);
 	void handThisConn();
 	
 private:
@@ -48,8 +40,9 @@ private:
 	int listenFd_;
 	int port_;
 	int nextConnId_;
+	bool started_;
 	std::shared_ptr<Channel> acceptChannel_;
-	std::map<std::string, HttpConnPtr> ConnectionMap_;
+//	std::map<std::string, HttpConnPtr> ConnectionMap_;
 	//std::unique_ptr<EventLoopThreadPool> eventLoopThreadPool_;
 };
 

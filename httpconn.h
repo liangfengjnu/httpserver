@@ -29,6 +29,21 @@ class Channel;
 class Eventloop;
 
 
+enum ProcessState 
+{
+	STATE_PARSE_URI = 1,
+	STATE_PARSE_HEADERS,
+	STATE_RECV_BODY,
+	STATE_ANALYSIS,
+	STATE_FINISH
+};
+
+enum ConnectionState{H_CONNECTED = 0, H_DISCONNECTING, H_DISCONNECTED};
+
+enum Method{GET = 0, POST, HEAD, PUT, DELETE,
+			TRACE, OPTIONS, CONNECT, PATCH};
+			
+enum Version{HTTP_10 = 1, HTTP_11};
 
 
 class HttpConn : public std::enable_shared_from_this<HttpConn>
@@ -43,7 +58,7 @@ public:
 
 	
 	void setHandleMessages(messageCallBack&& handleMessages){handleMessages_ = handleMessages;}
-	void setCloseCallBack(closeCallBack&& handleClose){closeCallBack_ = handleClose;}
+	//void setCloseCallBack(closeCallBack&& handleClose){closeCallBack_ = handleClose;}
 	
 	void handleRead();
 	void handleWrite();
@@ -168,10 +183,20 @@ private:
 	*/
 	int connFd_;
 	Eventloop* loop_;
+	bool error_;
+	ConnectionState connectionState_;
+	Method method_;
+	Version version_;
+	ProcessState state_;
+	bool keepAlive_;
+
+
 	std::shared_ptr<Channel> channel_; 
 	messageCallBack handleMessages_;
 	closeCallBack closeCallBack_;
 	
+	
+
 };
 typedef std::shared_ptr<HttpConn> HttpConnPtr;
 #endif
