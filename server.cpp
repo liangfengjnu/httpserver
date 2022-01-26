@@ -2,8 +2,6 @@
 #include "eventloop.h"
 #include "Util.h"
 
-using std::placeholders::_1;
-
 
 Server::Server(Eventloop* loop, int port):
 	//threadNum_(threadNum),
@@ -128,7 +126,6 @@ void Server::handleNewConn()
 
 		setSocketNodelay(connFd);
 		HttpConnPtr conn (new HttpConn(loop_, connFd));
-		conn->setHandleMessages(std::bind(&Server::onRequest, this, _1));
 		//conn->setCloseCallBack(std::bind(&Server::removeConnection, this, _1));
 		conn->newEvent();
 	}
@@ -139,23 +136,6 @@ void Server::handleNewConn()
 void Server::handThisConn()
 { 
 	loop_->updateToChannel(acceptChannel_); 
-}
-
-//处理请求头
-void Server::onRequest(Buffer& readBuff_)
-{
-	std::cout<<readBuff_.retrieveAllToStr()<<std::endl;
-
-	if(!request_.parse(readBuff_))
-	{
-		printf("request error!\n");
-	}
-	else
-	{
-		//写回复
-		//查文件合法
-		//写文件
-	}
 }
 
 // void Server::removeConnection(const HttpConnPtr& conn)

@@ -8,6 +8,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
+#include <atomic>
+#include <strings.h>
+
 
 class Buffer
 {

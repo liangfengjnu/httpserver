@@ -83,8 +83,6 @@ void Epoller::epollAdd(std::shared_ptr<Channel> channel, int timeout)
 	}
 }
 
-
-
 void Epoller::epoll_del(std::shared_ptr<Channel> channel)
 {
 	struct epoll_event ev = {0};

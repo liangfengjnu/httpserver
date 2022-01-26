@@ -2,28 +2,16 @@
 #define HTTPCONN_H
 
 #include <unistd.h>
-#include <signal.h>
 #include <sys/types.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <assert.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <pthread.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <sys/mman.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <sys/uio.h>
-#include <functional>
-#include <memory>
 
-#include "locker.h"
 #include "buffer.h"
 #include "callbacks.h"
+#include "httprequest.h"
+#include "httpresponse.h"
 
 class Channel;
 class Eventloop;
@@ -57,133 +45,44 @@ public:
 	~HttpConn(){}
 
 	
-	void setHandleMessages(messageCallBack&& handleMessages){handleMessages_ = handleMessages;}
 	//void setCloseCallBack(closeCallBack&& handleClose){closeCallBack_ = handleClose;}
 	
 	void handleRead();
 	void handleWrite();
 	void handleClose();
 	void handleConn();
-	void handleMessages(Buffer& buffer);
-	void connectDestroy();
+	void toProcess();
+	bool process();
+	ssize_t onWrite(int* saveErrno);
+	
 	void newEvent();
 	
+	int toWriteBytes()
+	{
+		return iov_[0].iov_len + iov_[1].iov_len;
+	}
+	
+    bool isKeepAlive() const 
+	{
+        return request_.isKeepAlive();
+    }
+
 public:
-	/*
-	//文件名的最大长度
-	static const int FILENAME_LEN = 200;
-	//读缓冲区的大小
-	static const int READ_BUFFER_SIZE = 2048;
-	//写缓冲区的大小
-	static const int WRITE_BUFFER_SIZE = 1024;
+	static const char* srcDir;
+	
 
-	//HTTP请求方法
-	enum METHOD{GET = 0, POST, HEAD, PUT, DELETE,
-				TRACE, OPTIONS, CONNECT, PATCH};
-	
-	//解析客户请求时，主状态机所处的状态
-	enum CHECK_STATE{CHECK_STATE_REQUESTLINE = 0,
-					 CHECK_STATE_HEADER,	
-					 CHECK_STATE_CONTENT};
-					 
-	//服务器处理HTTP请求的可能结果
-	enum HTTP_CODE{NO_REQUEST, GET_REQUEST, BAD_REQUEST,
-				   NO_RESOURCE, FORBIDDEN_REQUEST, FILE_REQUEST,
-				   INTERNAL_ERROR, CLOSED_CONNECTION};
-	
-	//行的读取状态
-	enum LINE_STATUS {LINE_OK = 0, LINE_BAD, LINE_OPEN};
-	
-	static int m_epollfd;
-	
-	//统计用户数量
-	static int m_user_count;
-	*/
-private:
-	/*
-	//初始化连接
-	void init();
-	//解析HTTP请求
-	HTTP_CODE process_read();
-	//填充HTTP应答
-	bool process_write(HTTP_CODE ret);
-	
-	HTTP_CODE do_read();
-	HTTP_CODE http_request();
-
-	HTTP_CODE parse_request_line(char* text);
-	HTTP_CODE parse_headers(char* text);
-	HTTP_CODE parse_content(char* text);
-	HTTP_CODE do_request();
-	char* getline(){return m_read_buf + m_start_line;}
-	LINE_STATUS parse_line();
-	
-	//被process_write调用以填充HTTP应答
-	void unmap();
-	bool addResponse(const char* format, ... );
-	bool addContent(const char* content);
-	bool addStatusLine(int status, const char* title);
-	bool addHeaders(int content_length);
-	bool addContentLength(int content_len);
-	bool addLinger();
-	bool addBlankLine();
-	
-	*/
 private:
 
-	// 该HTTP连接的socket和对方的socket地址
-	int m_sockfd;
-	sockaddr_in m_address;
 	
 	//读缓冲区
 	Buffer readBuff_;
 	//写缓冲区
 	Buffer writeBuff_;
-	//当前正在解析的行的起始位置
-	int m_start_line;
-	//当前正在分析的字符在读缓冲区中的位置
-	int m_check_idx;
-	//标识读缓冲中已经读入的客户数据的最后一个字节的下一个位置
-	int readIdx_;
-	//写缓冲区中待发送的字节数
-	int writeIdx_;
-	
-/*	
-	//主状态机当前所处的状态
-	CHECK_STATE m_check_state;
-	//请求方法
-	METHOD m_method;
 
-	char* _method;
 	
-	//客户请求的目标文件的完整路径
-	char m_real_file[FILENAME_LEN];
-	//客户请求的目标文件的文件名
-	char* m_url;
-	//HTTP协议版本号
-	char* m_version;
-	//HTTP请求的消息体的长度
-	int m_content_length;
-	//主机名
-	char* m_host;
-	
-	
-	
-	//HTTP请求是否要求保持连接
-	bool m_linger;
-	
-	//客户请求的目标文件被mmap到内存中的起始位置
-	char* m_file_address;
-	//目标文件的状态。用以判断文件是否存在、是否为目录、是否可读，并获取文件大小等信息
-	struct stat m_file_stat;
-	
-	//writev的两个成员，其中m_iv_count表示被写内存块的数量
-	struct iovec m_iv[2];
-	int m_iv_count;
-	*/
 	int connFd_;
 	Eventloop* loop_;
-	bool error_;
+	bool isClose_;
 	ConnectionState connectionState_;
 	Method method_;
 	Version version_;
@@ -191,12 +90,17 @@ private:
 	bool keepAlive_;
 
 
+
 	std::shared_ptr<Channel> channel_; 
 	messageCallBack handleMessages_;
 	closeCallBack closeCallBack_;
 	
-	
+	int iovCnt_;
+    struct iovec iov_[2];
+    HttpRequest request_;
+    HttpResponse response_;
 
 };
 typedef std::shared_ptr<HttpConn> HttpConnPtr;
+
 #endif

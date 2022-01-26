@@ -9,7 +9,6 @@
 #include <errno.h>
 
 #include "httpconn.h"
-#include "httprequest.h"
 #include "channel.h"
 #include "eventloop.h"
 
@@ -26,7 +25,6 @@ public:
 	Eventloop *getLoop() const { return loop_; }
 	void start();
 	void handleNewConn();
-	void onRequest(Buffer& buffer);
 	//void removeConnection(const HttpConnPtr& conn);
 	void handThisConn();
 	
@@ -36,7 +34,6 @@ private:
 private:
 	Eventloop* loop_;
 	//int threadNum_;
-	HttpRequest request_;
 	int listenFd_;
 	int port_;
 	int nextConnId_;

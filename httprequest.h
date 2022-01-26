@@ -44,9 +44,9 @@ public:
     std::string& path();
     std::string method() const;
     std::string version() const;
-  //  std::string GetPost(const std::string& key) const;
-   // std::string GetPost(const char* key) const;
-
+    std::string GetPost(const std::string& key) const;
+    std::string GetPost(const char* key) const;
+	bool isKeepAlive() const;
 
 private:
     bool ParseRequestLine_(const std::string& line);
@@ -54,8 +54,10 @@ private:
     void ParseBody_(const std::string& line);
 
     void ParsePath_();
-    //void ParsePost_();
-    //void ParseFromUrlencoded_();
+    void ParsePost_();
+    void ParseFromUrlencoded_();
+//	static bool userVerify(const std::string& name, const std::string& pwd, bool isLogin);
+	static int converHex(char ch);
 	
 	PARSE_STATE state_;
 	std::string method_, path_, version_, body_;
@@ -63,7 +65,7 @@ private:
     std::unordered_map<std::string, std::string> post_;
 	
 	static const std::unordered_set<std::string> DEFAULT_HTML;
-   // static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
+    static const std::unordered_map<std::string, int> DEFAULT_HTML_TAG;
 };
 
 #endif
