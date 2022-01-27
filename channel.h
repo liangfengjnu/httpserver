@@ -23,11 +23,9 @@ public:
 	void setReadHandler(callBack&& readHandler){readHandler_ = readHandler;}
 	void setWriteHandler(callBack&& writeHandler){writeHandler_ = writeHandler;}
 	void setErrorHandler(callBack&& errorHandler){errorHandler_ = errorHandler;}
-	void setConnHandler(callBack&& connHandler){connHandler_ = connHandler;}
 	
 	void handleRead();
 	void handleWrite();
-	void handleConn();
 	
 	void handleEvents();
 	bool isNoneEvent(){return events_ == 0;}
@@ -37,12 +35,6 @@ public:
 	__uint32_t getEvents(){return events_;}
 	void setRevents(__uint32_t ev){revents_ = ev;}
 	
-	bool equalAndUpdateLastEvents()
-	{
-		bool ret = (lastEvents_ == events_);
-		lastEvents_ = events_;
-		return ret;
-	}
 
 private:
 
@@ -56,7 +48,6 @@ private:
 	callBack readHandler_;
 	callBack writeHandler_;
 	callBack errorHandler_;
-	callBack connHandler_;
 };
 
 #endif

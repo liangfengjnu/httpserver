@@ -101,7 +101,6 @@ void Server::start()
 	acceptChannel_->setFd(listenFd_);
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
-	acceptChannel_->setConnHandler(std::bind(&Server::handThisConn, this));
 	loop_->addToPoller(acceptChannel_, 0);
 	started_ = true;
 }
@@ -114,7 +113,7 @@ void Server::handleNewConn()
 	socklen_t client_addrlength = sizeof(client_address);
 	int connFd = 0;
 	printf("handleNewConn function\n");
-	while((connFd = accept(listenFd_, (struct sockaddr*)&client_address,
+	if((connFd = accept(listenFd_, (struct sockaddr*)&client_address,
 					&client_addrlength)) > 0)
 	{
 		if(setSocketNonBlocking(connFd) < 0)
@@ -126,19 +125,10 @@ void Server::handleNewConn()
 
 		setSocketNodelay(connFd);
 		HttpConnPtr conn (new HttpConn(loop_, connFd));
-		//conn->setCloseCallBack(std::bind(&Server::removeConnection, this, _1));
 		conn->newEvent();
 	}
-	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
-}
-
-
-void Server::handThisConn()
-{ 
+	//acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	loop_->updateToChannel(acceptChannel_); 
 }
 
-// void Server::removeConnection(const HttpConnPtr& conn)
-// {
-	// conn->connectDestroy();
-// }
+

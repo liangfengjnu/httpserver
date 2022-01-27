@@ -28,7 +28,6 @@ HttpConn::HttpConn(Eventloop* loop, int connFd):
 	//channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	channel_->setReadHandler(std::bind(&HttpConn::handleRead, this));
 	channel_->setWriteHandler(std::bind(&HttpConn::handleWrite, this));
-	channel_->setConnHandler(bind(&HttpConn::handleConn, this));
 }
 
 void HttpConn::handleRead()
@@ -53,6 +52,7 @@ void HttpConn::toProcess()
 	if(process())
 	{
 		channel_->setEvents(EPOLLOUT | EPOLLET | EPOLLONESHOT);
+		handleWrite();
 	}
 	else
 	{
@@ -71,7 +71,7 @@ bool HttpConn::process()
     else if(request_.parse(readBuff_)) 
 	{
         //LOG_DEBUG("%s", request_.path().c_str());
-		
+		printf("%s\n", request_.path().c_str());
         response_.init(srcDir, request_.path(), request_.isKeepAlive(), 200);
     } 
 	else 
@@ -114,6 +114,7 @@ void HttpConn::handleClose()
 
 void HttpConn::handleWrite()
 {
+	printf("handleWrite\n");
     int ret = -1;
     int writeErrno = 0;
     ret = onWrite(&writeErrno);
@@ -170,12 +171,6 @@ ssize_t HttpConn::onWrite(int *saveErrno)
     } while(toWriteBytes() > 10240);
     return len;
 }
-
-void HttpConn::handleConn()
-{
-
-}
-
 
 void HttpConn::newEvent()
 {

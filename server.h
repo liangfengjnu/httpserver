@@ -25,8 +25,6 @@ public:
 	Eventloop *getLoop() const { return loop_; }
 	void start();
 	void handleNewConn();
-	//void removeConnection(const HttpConnPtr& conn);
-	void handThisConn();
 	
 private:
 	bool initServer();

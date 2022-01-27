@@ -50,7 +50,6 @@ public:
 	void handleRead();
 	void handleWrite();
 	void handleClose();
-	void handleConn();
 	void toProcess();
 	bool process();
 	ssize_t onWrite(int* saveErrno);

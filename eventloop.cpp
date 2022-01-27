@@ -73,7 +73,7 @@ void Eventloop::loop()
 
 void Eventloop::addToPoller(std::shared_ptr<Channel> channel, int timeout = 0)
 {
-	epoller_->epollAdd(channel, timeout);
+	epoller_->epoll_add(channel, timeout);
 }
 
 
@@ -84,7 +84,7 @@ void Eventloop::updateToChannel(std::shared_ptr<Channel> channel)
 
 void Eventloop::removeChannel(std::shared_ptr<Channel> channel)
 {
-	epoller_->removeChannel(channel);
+	epoller_->epoll_del(channel);
 }
 
 // void Eventloop::doPendingFunctors() {

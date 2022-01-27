@@ -43,7 +43,6 @@ void Channel::handleEvents()
 			writeHandler_();
 		}
     }
-	handleConn();
 }
 
 
@@ -58,12 +57,5 @@ void Channel::handleWrite() {
 	if(writeHandler_) 
 	{
 		writeHandler_();
-	}
-}
-
-void Channel::handleConn() {
-	if(connHandler_) 
-	{
-		connHandler_();
 	}
 }
