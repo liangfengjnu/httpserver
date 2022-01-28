@@ -1,104 +1,57 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
-#include <list>
-#include <cstdio>
-#include <exception>
+#include "channel.h"
 #include <pthread.h>
+#include <functional>
+#include <memory>
+#include <vector>
 
-#include "locker.h"
+const int THREADPOOL_INVALID = -1;
+const int THREADPOOL_LOCK_FAILURE = -2;
+const int THREADPOOL_QUEUE_FULL = -3;
+const int THREADPOOL_SHUTDOWN = -4;
+const int THREADPOOL_THREAD_FAILURE = -5;
+const int THREADPOOL_GRACEFUL = 1;
 
-template<typename T>
-class threadpool{
-public:
-	threadpool(int thread_number = 8, int max_request = 10000);
-	~threadpool();
-	
-	bool append(T* request);
+const int MAX_THREADS = 1024;
+const int MAX_QUEUE = 65535;
 
-private:
-	static void* worker(void* arg);
-	void run();
-	
-	int m_thread_number;
-	int m_max_requests;
-	pthread_t* m_threads;
-	std::list<T*> m_workqueue;
-	locker m_queuelocker;
-	sem m_queuestat;
-	bool m_stop;
+typedef enum
+{
+    immediate_shutdown = 1,
+    graceful_shutdown  = 2
+} ShutDownOption;
+
+struct ThreadPoolTask
+{
+    std::function<void(std::shared_ptr<void>)> fun;
+    std::shared_ptr<void> args;
 };
 
-template<typename T>
-threadpool<T>::threadpool(int thread_number, int max_requests):
-		m_thread_number(thread_number), m_max_requests(max_requests),
-		m_stop(false), m_threads(NULL){
-			if((thread_number <= 0) || (max_requests <= 0)){
-				throw std::exception();
-			}
-			
-			m_threads = new pthread_t[m_thread_number];
-			
-			if(!m_threads){
-				throw std::exception();
-			}
-			
-			for(int i = 0; i < thread_number; ++i){
-				printf("create the %dth thread\n", i);
-				if(pthread_create(m_threads + i, NULL, worker, this) != 0){
-					delete []m_threads;
-					throw std::exception();
-				}
-				if(pthread_detach(m_threads[i])){
-					delete []m_threads;
-					throw std::exception();
-				}
-			}
-		}
-		
-template<typename T>
-threadpool<T>::~threadpool(){
-	delete []m_threads;
-	m_stop = true;
-}
 
-template<typename T>
-bool threadpool<T>::append(T* request){
-	m_queuelocker.lock();
-	if(m_workqueue.size() > m_max_requests){
-		m_queuelocker.unlock();
-		return false;
-	}
-	
-	m_workqueue.push_back(request);
-	m_queuelocker.unlock();
-	m_queuestat.post();
-	return true;
-}
+class ThreadPool
+{
+private:
+    static pthread_mutex_t lock;
+    static pthread_cond_t notify;
 
-template<typename T>
-void* threadpool<T>::worker(void* arg){
-	threadpool* pool = (threadpool*)arg;
-	pool->run();
-	return pool;
-}
+    static std::vector<pthread_t> threads;
+    static std::vector<ThreadPoolTask> queue;
+    static int thread_count;
+    static int queue_size;
+    static int head;
+    // tail 指向尾节点的下一节点
+    static int tail;
+    static int count;
+    static int shutdown;
+    static int started;
+public:
+    static int threadpool_create(int _thread_count, int _queue_size);
+    static int threadpool_add(std::shared_ptr<void> args, std::function<void(std::shared_ptr<void>)> fun);
+    static int threadpool_destroy(ShutDownOption shutdown_option = graceful_shutdown);
+    static int threadpool_free();
+    static void *threadpool_thread(void *args);
+};
 
-template<typename T>
-void threadpool<T>::run(){
-	while(!m_stop){
-		m_queuestat.wait();
-		m_queuelocker.lock();
-		if(m_workqueue.empty()){
-			m_queuelocker.unlock();
-			continue;
-		}
-		T* request = m_workqueue.front();
-		m_workqueue.pop_front();
-		m_queuelocker.unlock();
-		if(!request){
-			continue;
-		}
-		request->process();
-	}
-}
 #endif
