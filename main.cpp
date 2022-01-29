@@ -16,16 +16,16 @@
 #include "eventloop.h"
 
 
-void addsig(int sig, void(handler)(int), bool restart = true){
-	struct sigaction sa;
-	memset(&sa, '\0', sizeof(sa));
-	sa.sa_handler = handler;
-	if(restart){
-		sa.sa_flags |= SA_RESTART;
-	}
-	sigfillset(&sa.sa_mask);
-	assert(sigaction(sig, &sa, NULL) != -1);
-}
+// void addsig(int sig, void(handler)(int), bool restart = true){
+	// struct sigaction sa;
+	// memset(&sa, '\0', sizeof(sa));
+	// sa.sa_handler = handler;
+	// if(restart){
+		// sa.sa_flags |= SA_RESTART;
+	// }
+	// sigfillset(&sa.sa_mask);
+	// assert(sigaction(sig, &sa, NULL) != -1);
+// }
 
 void show_error(int connfd, const char* info){
 	printf("%s", info);
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]){
 	Eventloop mainloop;
 	//const char* ip = argv[1];
 	//int port = atoi(argv[1]);
-	addsig(SIGPIPE, SIG_IGN);
+	//addsig(SIGPIPE, SIG_IGN);
 	Server server(&mainloop, 5555);
 	server.start();
 	

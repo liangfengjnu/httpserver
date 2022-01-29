@@ -1,11 +1,11 @@
-#include "Eventloop.h"
-#include "base/Condition.h"
-#include "base/MutexLock.h"
-#include "base/Thread.h"
-//#include "base/noncopyable.h"
+#include "eventloop.h"
+#include "condition.h"
+#include "mutexlock.h"
+#include "thread.h"
+#include "noncopyable.h"
 
 
-class EventloopThread //: noncopyable
+class EventloopThread : noncopyable
 {
 public:
 	EventloopThread();

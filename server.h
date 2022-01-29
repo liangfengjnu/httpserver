@@ -11,6 +11,7 @@
 #include "httpconn.h"
 #include "channel.h"
 #include "eventloop.h"
+#include "eventloopthreadpool.h"
 
 
 class Eventloop;
@@ -31,14 +32,14 @@ private:
 	
 private:
 	Eventloop* loop_;
-	//int threadNum_;
+	int threadNum_;
 	int listenFd_;
 	int port_;
 	int nextConnId_;
 	bool started_;
 	std::shared_ptr<Channel> acceptChannel_;
 //	std::map<std::string, HttpConnPtr> ConnectionMap_;
-	//std::unique_ptr<EventLoopThreadPool> eventLoopThreadPool_;
+	std::unique_ptr<EventloopThreadPool> eventLoopThreadPool_;
 };
 
 #endif

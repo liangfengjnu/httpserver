@@ -1,14 +1,14 @@
 #include <memory>
 #include <vector>
-#include "EventloopThread.h"
+#include "eventloopthread.h"
 
 
 class EventloopThreadPool
 {
 public:
-	EventloopThreadPool(EventLoop* baseLoop, int numThreads);
+	EventloopThreadPool(Eventloop* baseLoop, int numThreads);
 
-	~EventloopThreadPool() { printf( "~EventloopThreadPool()\n)"; }
+	~EventloopThreadPool() { printf("~EventloopThreadPool()\n"); }
 	void start();
 
 	Eventloop* getNextLoop();

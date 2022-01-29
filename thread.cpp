@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <memory>
-#include "currentThread.h"
+#include "currentthread.h"
 
 
 #include <iostream>
@@ -57,7 +57,7 @@ struct ThreadData
 		CurrentThread::t_threadName = name_.empty() ? "Thread" : name_.c_str();
 		prctl(PR_SET_NAME, CurrentThread::t_threadName);
 
-    f	unc_();
+		func_();
 		CurrentThread::t_threadName = "finished";
 	}
 };

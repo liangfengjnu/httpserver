@@ -4,13 +4,12 @@
 
 
 Server::Server(Eventloop* loop, int port):
-	//threadNum_(threadNum),
+	threadNum_(2),
 	loop_(loop),
 	port_(port), 
 	nextConnId_(0),
-	acceptChannel_(new Channel(loop_))
-	//listenFd_(initServer(port_))
-	//eventLoopThreadPool_(new EventLoopThreadPool(loop_, threadNum)),
+	acceptChannel_(new Channel(loop_)),
+	eventLoopThreadPool_(new EventloopThreadPool(loop_, 2))
 {
 	handle_for_sigpipe();
 
@@ -28,18 +27,7 @@ Server::Server(Eventloop* loop, int port):
 
 Server::~Server()
 {
-	/*
-	close(epollfd);
-	close(listenfd);
-	delete []users;
-	delete pool_;
-*/
-	// for (auto& item : ConnectionMap_)
-	// {
-		// HttpConnPtr conn(item.second);
-		// item.second.reset();
-		// conn->connectDestroy();
-	// }
+
 }
 
 bool Server::initServer()
@@ -98,6 +86,7 @@ bool Server::initServer()
 
 void Server::start()
 {
+	eventLoopThreadPool_->start();
 	acceptChannel_->setFd(listenFd_);
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
@@ -116,6 +105,7 @@ void Server::handleNewConn()
 	if((connFd = accept(listenFd_, (struct sockaddr*)&client_address,
 					&client_addrlength)) > 0)
 	{
+		Eventloop* loop = eventLoopThreadPool_->getNextLoop();
 		if(setSocketNonBlocking(connFd) < 0)
 		{
 			printf("Set non block failed!\n");
@@ -124,8 +114,9 @@ void Server::handleNewConn()
 		printf("connection %d is succuess\n", connFd);
 
 		setSocketNodelay(connFd);
-		HttpConnPtr conn (new HttpConn(loop_, connFd));
-		conn->newEvent();
+		HttpConnPtr conn (new HttpConn(loop, connFd));
+		//conn->newEvent();
+		loop->queueInLoop(std::bind(&HttpConn::newEvent, conn));
 	}
 	//acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	loop_->updateToChannel(acceptChannel_); 

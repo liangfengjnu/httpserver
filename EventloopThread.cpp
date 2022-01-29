@@ -1,12 +1,10 @@
-// @Author Lin Ya
-// @Email xxbbb@vip.qq.com
-#include "EventloopThread.h"
+#include "eventloopthread.h"
 #include <functional>
-
+#include <assert.h>
 EventloopThread::EventloopThread()
     : loop_(NULL),
       exiting_(false),
-      thread_(bind(&EventloopThread::threadFunc, this), "EventloopThread"),
+      thread_(std::bind(&EventloopThread::threadFunc, this), "EventloopThread"),
       mutex_(),
       cond_(mutex_) {}
 

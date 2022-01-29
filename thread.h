@@ -1,10 +1,13 @@
+#ifndef THREAD_H
+#define THREAD_H
+
 #include <pthread.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <functional>
 #include <memory>
 #include <string>
-#include "CountDownLatch.h"
+#include "countdownlatch.h"
 #include "noncopyable.h"
 
 class Thread : noncopyable {
@@ -28,3 +31,5 @@ private:
 	std::string name_;
 	CountDownLatch latch_;
 };
+
+#endif
