@@ -93,3 +93,45 @@ void Epoller::epoll_mod(std::shared_ptr<Channel> channel)
 			channels_[fd].reset();
 		}
 }
+
+void Epoller::handleExpired()
+{
+	timerManager_.handleExpiredEvent();
+}
+
+std::vector<std::shared_ptr<Channel>> Epoller::getEventsRequest(int events_num) 
+{
+	std::vector<std::shared_ptr<Channel> > req_data;
+	for (int i = 0; i < events_num; ++i) 
+	{
+		// 获取有事件产生的描述符
+		int fd = events_[i].data.fd;
+
+		std::shared_ptr<Channel> cur_req = channels_[fd];
+
+		if (cur_req) 
+		{
+			cur_req->setRevents(events_[i].events);
+			cur_req->setEvents(0);
+			// 加入线程池之前将Timer和request分离
+			// cur_req->seperateTimer();
+			req_data.push_back(cur_req);
+		}
+		else 
+		{
+			//LOG << "SP cur_req is invalid";
+			printf("cur_req is invalid!\n");
+		}
+	}
+	return req_data;
+}
+
+void Epoll::add_timer(std::shared_ptr<Channel> request_data, int timeout) 
+{
+	shared_ptr<HttpConn> t = request_data->getHolder();
+	if (t)
+		timerManager_.addTimer(t, timeout);
+	else
+		printf("timer add fail!\n");
+		//LOG << "timer add fail";
+}

@@ -48,6 +48,7 @@ private:
 	void wakeup();
 	void handleRead();
 	void doPendingFunctors();
+	void handleConn();
 };
 
 #endif

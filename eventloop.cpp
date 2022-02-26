@@ -53,6 +53,10 @@ Eventloop::~Eventloop()
 	t_loopInThisThread = NULL;
 }
 
+void Eventloop::handleConn()
+{
+	updateToChannel(pwakeupChannel_, 0);
+}
 
 void Eventloop::wakeup() {
   uint64_t one = 1;
@@ -97,6 +101,10 @@ void Eventloop::queueInLoop(std::function<void()>&& cb)
 
 void Eventloop::loop()
 {
+	assert(!looping_);
+	assert(isInLoopThread());
+	looping_ = true;
+	quit_ = false;
 	while(!quit_)
 	{
 		channelList_.clear();
