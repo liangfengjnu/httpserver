@@ -12,10 +12,11 @@
 #include "callbacks.h"
 #include "httprequest.h"
 #include "httpresponse.h"
+#include "timer.h"
 
 class Channel;
 class Eventloop;
-
+class TimerNode;
 
 enum ProcessState 
 {
@@ -46,7 +47,8 @@ public:
 
 	
 	//void setCloseCallBack(closeCallBack&& handleClose){closeCallBack_ = handleClose;}
-	
+	void linkTimer(std::shared_ptr<TimerNode> mtimer);
+
 	void handleRead();
 	void handleWrite();
 	void handleClose();
@@ -55,6 +57,7 @@ public:
 	ssize_t onWrite(int* saveErrno);
 	
 	void newEvent();
+	std::shared_ptr<Channel> getChannel(){return channel_;}
 	
 	int toWriteBytes()
 	{
@@ -70,9 +73,7 @@ public:
 	static const char* srcDir;
 	
 
-private:
-
-	
+private:	
 	//读缓冲区
 	Buffer readBuff_;
 	//写缓冲区
@@ -87,9 +88,8 @@ private:
 	Version version_;
 	ProcessState state_;
 	bool keepAlive_;
-
-
-
+		
+	std::weak_ptr<TimerNode> timer_;
 	std::shared_ptr<Channel> channel_; 
 	messageCallBack handleMessages_;
 	closeCallBack closeCallBack_;

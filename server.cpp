@@ -3,11 +3,11 @@
 #include "Util.h"
 
 
-Server::Server(Eventloop* loop, int port):
-	threadNum_(2),
+Server::Server(Eventloop* loop, int threadNum, int port):
 	loop_(loop),
+	threadNum_(2),
 	port_(port), 
-	nextConnId_(0),
+	started_(false),
 	acceptChannel_(new Channel(loop_)),
 	eventLoopThreadPool_(new EventloopThreadPool(loop_, 2))
 {
@@ -90,6 +90,7 @@ void Server::start()
 	acceptChannel_->setFd(listenFd_);
 	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
 	acceptChannel_->setReadHandler(std::bind(&Server::handleNewConn, this));
+	acceptChannel_->setConnHandler(std::bind(&Server::handleConn, this));
 	loop_->addToPoller(acceptChannel_, 0);
 	started_ = true;
 }
@@ -102,10 +103,15 @@ void Server::handleNewConn()
 	socklen_t client_addrlength = sizeof(client_address);
 	int connFd = 0;
 	printf("handleNewConn function\n");
-	if((connFd = accept(listenFd_, (struct sockaddr*)&client_address,
+	while((connFd = accept(listenFd_, (struct sockaddr*)&client_address,
 					&client_addrlength)) > 0)
 	{
 		Eventloop* loop = eventLoopThreadPool_->getNextLoop();
+		if(connFd >= MAXFDS)
+		{
+			close(connFd);
+			continue;
+		}
 		if(setSocketNonBlocking(connFd) < 0)
 		{
 			printf("Set non block failed!\n");
@@ -115,11 +121,14 @@ void Server::handleNewConn()
 
 		setSocketNodelay(connFd);
 		HttpConnPtr conn (new HttpConn(loop, connFd));
-		//conn->newEvent();
+		conn->getChannel()->setHolder(conn);
 		loop->queueInLoop(std::bind(&HttpConn::newEvent, conn));
 	}
-	//acceptChannel_->setEvents(EPOLLIN | EPOLLET);
-	loop_->updateToChannel(acceptChannel_); 
+	acceptChannel_->setEvents(EPOLLIN | EPOLLET);
+	//loop_->updateToChannel(acceptChannel_); 
 }
 
-
+void Server::handleConn()
+{
+	loop_->updateToChannel(acceptChannel_);
+}

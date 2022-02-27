@@ -1,6 +1,7 @@
 #include "httpconn.h"
 #include "channel.h"
 #include "eventloop.h"
+#include "timer.h"
 
 #include <errno.h>
 
@@ -176,4 +177,10 @@ void HttpConn::newEvent()
 {
 	channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	loop_->addToPoller(channel_, 0);
+}
+
+void HttpConn::linkTimer(std::shared_ptr<TimerNode> mtimer) 
+{
+	// shared_ptr重载了bool, 但weak_ptr没有
+	timer_ = mtimer;
 }

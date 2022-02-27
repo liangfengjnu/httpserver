@@ -1,10 +1,13 @@
+//#ifndef TIMER_H
+//#define TIMER_H
+#pragma once
 #include <unistd.h>
 #include <deque>
 #include <memory>
 #include <queue>
 #include "httpconn.h"
-#include "base/MutexLock.h"
-#include "base/noncopyable.h"
+#include "mutexlock.h"
+#include "noncopyable.h"
 
 
 class HttpConn;
@@ -48,3 +51,5 @@ private:
 	std::priority_queue<SPTimerNode, std::deque<SPTimerNode>, TimerCmp> timerNodeQueue;
   // MutexLock lock;
 };
+
+//#endif
