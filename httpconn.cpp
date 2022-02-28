@@ -60,6 +60,7 @@ void HttpConn::toProcess()
 		channel_->setEvents(EPOLLIN | EPOLLET | EPOLLONESHOT);
 	}
 	loop_->updateToChannel(channel_);
+	
 }
 
 bool HttpConn::process()

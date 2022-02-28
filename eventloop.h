@@ -24,8 +24,8 @@ public:
 	void assertInLoopThread() { assert(isInLoopThread()); }
 	void loop();
 	void quit();
-	void addToPoller(std::shared_ptr<Channel> channel, int timeout);
-	void updateToChannel(std::shared_ptr<Channel> channel);
+	void addToPoller(std::shared_ptr<Channel> channel, int timeout = 0);
+	void updateToChannel(std::shared_ptr<Channel> channel, int timeout = 0);
 	void removeChannel(std::shared_ptr<Channel> channel);
 
 private:

@@ -129,9 +129,9 @@ void Eventloop::addToPoller(std::shared_ptr<Channel> channel, int timeout = 0)
 }
 
 
-void Eventloop::updateToChannel(std::shared_ptr<Channel> channel)
+void Eventloop::updateToChannel(std::shared_ptr<Channel> channel, int timeout)
 {
-	epoller_->epoll_mod(channel);
+	epoller_->epoll_mod(channel, timeout);
 }
 
 void Eventloop::removeChannel(std::shared_ptr<Channel> channel)

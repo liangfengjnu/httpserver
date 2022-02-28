@@ -25,9 +25,10 @@ public:
 	
 	void epoll_add(std::shared_ptr<Channel> channel, int timeout);
 	void epoll_mod(std::shared_ptr<Channel> channel, int timeout);
+	std::vector<std::shared_ptr<Channel>> getEventsRequest(int events_num);
 	void epoll_del(std::shared_ptr<Channel> channel);
 	void addTimer(std::shared_ptr<Channel> channel, int timeout);
-	void getEpollFd() {return epollFd_;}
+	int getEpollFd() {return epollFd_;}
 	void handleExpired();
 	
 private:

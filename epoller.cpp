@@ -81,8 +81,9 @@ void Epoller::epoll_del(std::shared_ptr<Channel> channel)
 	channels_[fd].reset();
 }
 
-void Epoller::epoll_mod(std::shared_ptr<Channel> channel)
+void Epoller::epoll_mod(std::shared_ptr<Channel> channel, int timeout)
 {
+	if(timeout > 0) addTimer(channel, timeout);
 	struct epoll_event ev = {0};
 	int fd = channel->getFd();
 		ev.data.fd = fd;
@@ -126,9 +127,9 @@ std::vector<std::shared_ptr<Channel>> Epoller::getEventsRequest(int events_num)
 	return req_data;
 }
 
-void Epoll::add_timer(std::shared_ptr<Channel> request_data, int timeout) 
+void Epoller::addTimer(std::shared_ptr<Channel> request_data, int timeout) 
 {
-	shared_ptr<HttpConn> t = request_data->getHolder();
+	std::shared_ptr<HttpConn> t = request_data->getHolder();
 	if (t)
 		timerManager_.addTimer(t, timeout);
 	else
